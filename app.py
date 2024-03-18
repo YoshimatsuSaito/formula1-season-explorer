@@ -1,6 +1,9 @@
+import pandas as pd
+import pydeck as pdk
 import streamlit as st
 
 from modules.ergast_api import retrieve_data
+from modules.geo import load_geo_data
 from modules.utils import get_target_previous_season_round, get_target_season, get_target_round, retrieve_basic_info
 
 
@@ -29,6 +32,8 @@ else:
 
 # Show the data
 st.header(f"{SEASON} Round {round_data.round_num}: {round_data.gp_name}")
+
+# Show the schedule
 st.subheader("Schedule")
 st.write(
     f"FP1: {round_data.fp1_time.strftime('%m/%d %H:%M') if round_data.fp1_time else 'TBA/Unknown'}"
@@ -49,6 +54,15 @@ st.write(
     f"Race: {round_data.race_time.strftime('%m/%d %H:%M') if round_data.race_time else 'TBA/Unknown'}"
 )
 
+
+# Show the circuits layout
+st.subheader("Circuit Layout")
+geojson_data = load_geo_data(round_data.gp_name)
+chart_data = pd.DataFrame(geojson_data["features"][0]["geometry"]["coordinates"], columns=["lon", "lat"])
+st.map(chart_data, size=10)
+
+
+# Show the results of previous hosting
 st.subheader(f"Results from last hosting: {previous_season}")
 if previous_data is not None:
     st.dataframe(previous_data.df_qualifying_results)

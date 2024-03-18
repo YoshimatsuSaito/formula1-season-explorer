@@ -1,7 +1,9 @@
 from datetime import datetime
 from functools import cache
+from pathlib import Path
 
 import pytz
+import yaml
 from ergast_py import Ergast
 
 japan_timezone = pytz.timezone("Asia/Tokyo")
@@ -89,3 +91,9 @@ def get_target_previous_season_round(
         except:
             continue
     return None
+
+
+def load_config(path: str | Path) -> dict:
+    """Load config"""
+    with open(path) as f:
+        return yaml.safe_load(f)

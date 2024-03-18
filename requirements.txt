@@ -8,3 +8,4 @@ pydeck
 streamlit
 streamlit_folium
 tqdm
+PyYAML
