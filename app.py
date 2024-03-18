@@ -1,0 +1,57 @@
+import streamlit as st
+
+from modules.ergast_api import retrieve_data
+from modules.utils import get_target_previous_season_round, get_target_season, get_target_round, retrieve_basic_info
+
+
+# Identify the target round to show
+SEASON = get_target_season()
+round_to_show = get_target_round(SEASON)
+dict_basic_info = retrieve_basic_info(SEASON)
+dict_options = {round_num: f"Rd. {round_num}: {gp_name}" for round_num, gp_name in zip(dict_basic_info["round_num"], dict_basic_info["gp_name"])}
+default_idx = round_to_show - 1
+round_to_show = st.sidebar.selectbox(
+    "Choose Grand Prix",
+    options=list(dict_options.keys()),
+    format_func=lambda x: dict_options[x],
+    index=default_idx,
+)
+previous_season, previous_round = get_target_previous_season_round(
+    SEASON, round_to_show
+)
+
+# Get the data of the target round
+round_data = retrieve_data(SEASON, round_to_show)
+if previous_round is not None:
+    previous_data = retrieve_data(previous_season, previous_round)
+else:
+    previous_data = None
+
+# Show the data
+st.header(f"{SEASON} Round {round_data.round_num}: {round_data.gp_name}")
+st.subheader("Schedule")
+st.write(
+    f"FP1: {round_data.fp1_time.strftime('%m/%d %H:%M') if round_data.fp1_time else 'TBA/Unknown'}"
+)
+st.write(
+    f"FP2: {round_data.fp2_time.strftime('%m/%d %H:%M') if round_data.fp2_time else 'TBA/Unknown'}"
+)
+st.write(
+    f"FP3: {round_data.fp3_time.strftime('%m/%d %H:%M') if round_data.fp3_time else 'TBA/Unknown'}"
+)
+st.write(
+    f"Qualifying: {round_data.qualifying_time.strftime('%m/%d %H:%M') if round_data.qualifying_time else 'TBA/Unknown'}"
+)
+st.write(
+    f"Sprint: {round_data.sprint_time.strftime('%m/%d %H:%M') if round_data.sprint_time else 'TBA/Unknown'}"
+)
+st.write(
+    f"Race: {round_data.race_time.strftime('%m/%d %H:%M') if round_data.race_time else 'TBA/Unknown'}"
+)
+
+st.subheader(f"Results from last hosting: {previous_season}")
+if previous_data is not None:
+    st.dataframe(previous_data.df_qualifying_results)
+    st.dataframe(previous_data.df_race_result)
+else:
+    st.warning("There is not available data")

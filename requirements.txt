@@ -1,0 +1,10 @@
+black
+ergast-py
+folium
+isort
+numpy
+pandas
+pydeck
+streamlit
+streamlit_folium
+tqdm
