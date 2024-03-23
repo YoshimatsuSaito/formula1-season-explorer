@@ -1,4 +1,5 @@
-geo_data_dir: "data/f1-circuits-master/circuits"
+s3_key: "geo_data/circuits"
+
 gp_circuits:
   "Bahrain Grand Prix": "bh-2002.geojson"
   "Saudi Arabian Grand Prix": "sa-2021.geojson"

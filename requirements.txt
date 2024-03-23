@@ -1,10 +1,12 @@
 black
+boto3
 ergast-py
 folium
 isort
 numpy
 pandas
 pydeck
+python-dotenv
 streamlit
 streamlit_folium
 tqdm

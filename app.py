@@ -1,17 +1,26 @@
 import pandas as pd
 import pydeck as pdk
 import streamlit as st
+from dotenv import load_dotenv
 
 from modules.ergast_api import retrieve_data
 from modules.geo import load_geo_data
-from modules.utils import get_target_previous_season_round, get_target_season, get_target_round, retrieve_basic_info
+from modules.utils import (get_target_previous_season_round, get_target_round,
+                           get_target_season, retrieve_basic_info)
+
+load_dotenv()
 
 
 # Identify the target round to show
 SEASON = get_target_season()
 round_to_show = get_target_round(SEASON)
 dict_basic_info = retrieve_basic_info(SEASON)
-dict_options = {round_num: f"Rd. {round_num}: {gp_name}" for round_num, gp_name in zip(dict_basic_info["round_num"], dict_basic_info["gp_name"])}
+dict_options = {
+    round_num: f"Rd. {round_num}: {gp_name}"
+    for round_num, gp_name in zip(
+        dict_basic_info["round_num"], dict_basic_info["gp_name"]
+    )
+}
 default_idx = round_to_show - 1
 round_to_show = st.sidebar.selectbox(
     "Choose Grand Prix",
@@ -58,7 +67,9 @@ st.write(
 # Show the circuits layout
 st.subheader("Circuit Layout")
 geojson_data = load_geo_data(round_data.gp_name)
-chart_data = pd.DataFrame(geojson_data["features"][0]["geometry"]["coordinates"], columns=["lon", "lat"])
+chart_data = pd.DataFrame(
+    geojson_data["features"][0]["geometry"]["coordinates"], columns=["lon", "lat"]
+)
 st.map(chart_data, size=10)
 
 

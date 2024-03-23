@@ -78,7 +78,9 @@ def get_target_previous_season_round(
     dict_res_current_year = retrieve_basic_info(current_season)
 
     # Identify grand prix name of the target round
-    gp_round_idx_current_year = dict_res_current_year["round_num"].index(current_round_num)
+    gp_round_idx_current_year = dict_res_current_year["round_num"].index(
+        current_round_num
+    )
     gp_name = dict_res_current_year["gp_name"][gp_round_idx_current_year]
 
     # Check last 10 years
@@ -87,7 +89,10 @@ def get_target_previous_season_round(
         dict_res_previous_year = retrieve_basic_info(season_to_check)
         try:
             gp_name_idx_previous_year = dict_res_previous_year["gp_name"].index(gp_name)
-            return season_to_check, dict_res_previous_year["round_num"][gp_name_idx_previous_year]
+            return (
+                season_to_check,
+                dict_res_previous_year["round_num"][gp_name_idx_previous_year],
+            )
         except:
             continue
     return None
