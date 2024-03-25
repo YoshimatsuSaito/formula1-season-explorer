@@ -1,4 +1,5 @@
-s3_key: "geo_data/circuits"
+s3_geo_data_key: "geo_data/circuits"
+s3_past_data_key: "data_1950_2022"
 
 gp_circuits:
   "Bahrain Grand Prix": "bh-2002.geojson"
