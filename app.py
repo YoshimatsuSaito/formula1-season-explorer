@@ -1,3 +1,5 @@
+import os
+
 import pandas as pd
 import pydeck as pdk
 import streamlit as st
@@ -5,14 +7,15 @@ from dotenv import load_dotenv
 
 from modules.ergast_api import retrieve_data
 from modules.geo import load_geo_data
-from modules.utils import (
-    get_target_previous_season_round,
-    get_target_round,
-    get_target_season,
-    retrieve_basic_info,
-)
+from modules.utils import (get_target_previous_season_round, get_target_round,
+                           get_target_season, load_config, retrieve_basic_info)
 
 load_dotenv()
+
+BUCKET_NAME = os.environ.get("BUCKET_NAME")
+AWS_ACCESS_KEY_ID = os.environ.get("AWS_ACCESS_KEY_ID")
+AWS_SECRET_ACCESS_KEY = os.environ.get("AWS_SECRET_ACCESS_KEY")
+DICT_CONFIG = load_config("./config/config.yml")
 
 
 # Identify the target round to show
@@ -70,7 +73,13 @@ st.write(
 
 # Show the circuits layout
 st.subheader("Circuit Layout")
-geojson_data = load_geo_data(round_data.gp_name)
+geojson_data = load_geo_data(
+    geo_file_name=DICT_CONFIG["gp_circuits"][round_data.gp_name],
+    aws_access_key_id=AWS_ACCESS_KEY_ID,
+    aws_secret_access_key=AWS_SECRET_ACCESS_KEY,
+    bucket_name=BUCKET_NAME,
+    s3_geo_data_key=DICT_CONFIG["s3_geo_data_key"],
+)
 chart_data = pd.DataFrame(
     geojson_data["features"][0]["geometry"]["coordinates"], columns=["lon", "lat"]
 )
