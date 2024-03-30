@@ -162,3 +162,7 @@ cython_debug/
 data/
 
 scripts/kaggle.json
+
+.devcontainer/
+
+notebooks/util.ipynb
