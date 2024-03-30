@@ -1,4 +1,26 @@
+from dataclasses import dataclass
+
 import pandas as pd
+
+
+@dataclass
+class ModelInputData:
+    """Data for model input"""
+
+    df: pd.DataFrame
+    list_col_X: list[str] | None = None
+    col_y: str | None = None
+
+    def __post_init__(self):
+        if self.list_col_X is None:
+            self.list_col_X = [
+                "recent_position",
+                "season_position",
+                "season_q_relative_performance",
+                "prev_position",
+            ]
+        if self.col_y is None:
+            self.col_y = "position"
 
 
 def add_features(df: pd.DataFrame) -> pd.DataFrame:
@@ -37,3 +59,9 @@ def add_features(df: pd.DataFrame) -> pd.DataFrame:
     ].transform(lambda x: x.shift(1).expanding(min_periods=1).mean())
 
     return df
+
+
+def make_model_input_data(df: pd.DataFrame) -> ModelInputData:
+    """Make model input data"""
+    df = add_features(df)
+    return ModelInputData(df=df)
