@@ -166,3 +166,7 @@ scripts/kaggle.json
 .devcontainer/
 
 notebooks/util.ipynb
+
+lambda/
+
+layer/

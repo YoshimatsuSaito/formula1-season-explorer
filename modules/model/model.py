@@ -7,6 +7,7 @@ import lightgbm as lgb
 import numpy as np
 import pandas as pd
 from lightgbm import LGBMClassifier, LGBMRanker
+from scipy.stats import rankdata
 
 
 class Classifier:
@@ -108,22 +109,21 @@ class Ranker:
     def predict(self, X: pd.DataFrame, query: np.ndarray | None = None) -> np.ndarray:
         """Predict rank"""
         pred = self.model.predict(X)
-        ranks = np.zeros_like(pred)
+        ranks = np.zeros_like(pred, dtype=float)
 
-        # If prediction is only for a round, return the rank
         if query is None:
-            # Start rank from 1
-            return np.argsort(np.argsort(pred)) + 1
+            # Use 'min' method for ranking to handle ties by assigning the minimum possible rank
+            ranks = rankdata(pred, method='min')
+        else:
+            start_idx = 0
+            for query_size in query:
+                pred_query = pred[start_idx : start_idx + query_size]
+                # Here also, use 'min' method for ranking within each query
+                ranks[start_idx : start_idx + query_size] = rankdata(pred_query, method='min')
+                start_idx += query_size
 
-        # If prediction is for multiple rounds, return the rank for each round
-        start_idx = 0
-        for query_size in query:
-            pred_query = pred[start_idx : start_idx + query_size]
-            rank_query = np.argsort(np.argsort(pred_query))
-            ranks[start_idx : start_idx + query_size] = rank_query
-            start_idx += query_size
-        # Start rank from 1
-        return ranks + 1
+        # Adjust ranks to start from 1 if not already
+        return ranks
 
     def train(
         self,

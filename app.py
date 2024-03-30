@@ -7,8 +7,13 @@ from dotenv import load_dotenv
 
 from modules.ergast_api import retrieve_data
 from modules.geo import load_geo_data
-from modules.utils import (get_target_previous_season_round, get_target_round,
-                           get_target_season, load_config, retrieve_basic_info)
+from modules.utils import (
+    get_target_previous_season_round,
+    get_target_round,
+    get_target_season,
+    load_config,
+    retrieve_basic_info,
+)
 
 load_dotenv()
 

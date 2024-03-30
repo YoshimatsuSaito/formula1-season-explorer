@@ -4,7 +4,6 @@ from io import BytesIO, StringIO
 import boto3
 import pandas as pd
 from ergast_py import Ergast
-from tqdm import tqdm
 
 
 def _cvt_datetime_to_sec(x: datetime.datetime | None) -> float | None:
@@ -30,7 +29,7 @@ def _retrieve_race_data(season: int) -> pd.DataFrame:
     list_driver = [x.driver_id for x in Ergast().season(season).get_drivers()]
 
     # Loop for race
-    for race in tqdm(list_race):
+    for race in list_race:
 
         grandprix = race.race_name
         n_round = race.round_no
@@ -79,7 +78,7 @@ def _retrieve_qualifying_data(season: int) -> pd.DataFrame:
     list_driver = [x.driver_id for x in Ergast().season(season).get_drivers()]
 
     # Loop for race
-    for race in tqdm(list_race):
+    for race in list_race:
 
         grandprix = race.race_name
         n_round = race.round_no
