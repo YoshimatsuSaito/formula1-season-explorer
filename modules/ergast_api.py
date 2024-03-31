@@ -2,7 +2,6 @@ import os
 import sys
 from dataclasses import dataclass
 from datetime import datetime
-from functools import cache, cached_property
 from typing import Any
 
 import pandas as pd
@@ -108,7 +107,7 @@ class RoundData:
         """Get longitude of the round"""
         return self.basic_info.circuit.location.longitude
 
-    @cached_property
+    @property
     def df_race_result(self) -> pd.DataFrame | None:
         """Return dataframe of race results"""
         if self.race_results is None:
@@ -142,7 +141,7 @@ class RoundData:
         )
         return df_race_result
 
-    @cached_property
+    @property
     def df_qualifying_results(self) -> pd.DataFrame | None:
         """Return dataframe of qualifying results"""
         if self.qualifying_results is None:
@@ -169,7 +168,6 @@ class RoundData:
         )
 
 
-@cache
 def retrieve_data(season: int, round_num: int) -> RoundData:
     """Retrieve info from api
     NOTE: This is the only access point to the api

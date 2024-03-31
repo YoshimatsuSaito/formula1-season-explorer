@@ -113,13 +113,15 @@ class Ranker:
 
         if query is None:
             # Use 'min' method for ranking to handle ties by assigning the minimum possible rank
-            ranks = rankdata(pred, method='min')
+            ranks = rankdata(pred, method="min")
         else:
             start_idx = 0
             for query_size in query:
                 pred_query = pred[start_idx : start_idx + query_size]
                 # Here also, use 'min' method for ranking within each query
-                ranks[start_idx : start_idx + query_size] = rankdata(pred_query, method='min')
+                ranks[start_idx : start_idx + query_size] = rankdata(
+                    pred_query, method="min"
+                )
                 start_idx += query_size
 
         # Adjust ranks to start from 1 if not already

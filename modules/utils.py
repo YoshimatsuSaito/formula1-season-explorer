@@ -1,5 +1,4 @@
 from datetime import datetime
-from functools import cache
 from pathlib import Path
 
 import pytz
@@ -19,7 +18,6 @@ def cvt_datetime_to_sec(datetime_value) -> float:
     )
 
 
-@cache
 def retrieve_basic_info(season: int) -> dict[str, list[datetime | int | str]]:
     """Retrieve basic information of the season"""
     res = Ergast().season(season).get_races()

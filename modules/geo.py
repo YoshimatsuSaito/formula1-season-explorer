@@ -1,11 +1,9 @@
 import json
-from functools import cache
 from typing import Any
 
 import boto3
 
 
-@cache
 def load_geo_data(
     geo_file_name: str,
     aws_access_key_id: str,
