@@ -1,17 +1,26 @@
 import os
+import pytz
 
 import pandas as pd
 import pydeck as pdk
+import seaborn as sns
 import streamlit as st
 from dotenv import load_dotenv
+from matplotlib import pyplot as plt
+from matplotlib import dates as mdates
 
 from modules.ergast_api import RoundData, retrieve_data
 from modules.geo import load_geo_data
 from modules.model.current_data_retriever import load_current_data
 from modules.model.model import Classifier, Ranker
 from modules.model.preprocess import ModelInputData, make_model_input_data
-from modules.utils import (get_target_previous_season_round, get_target_round,
-                           get_target_season, load_config, retrieve_basic_info)
+from modules.utils import (
+    get_target_previous_season_round,
+    get_target_round,
+    get_target_season,
+    load_config,
+    retrieve_basic_info,
+)
 
 load_dotenv()
 
@@ -28,34 +37,34 @@ DICT_CONFIG = load_config("./config/config.yml")
 
 
 # Make cached function
-@st.cache_data(ttl=60 * 60 * 24, show_spinner=False)
+@st.cache_data(ttl=60 * 60 * 24, show_spinner=True)
 def cached_get_target_previous_season_round(
     current_season: int, current_round_num: int
 ) -> tuple[int, int] | None:
     return get_target_previous_season_round(current_season, current_round_num)
 
 
-@st.cache_data(ttl=60 * 60 * 24, show_spinner=False)
+@st.cache_data(ttl=60 * 60 * 24, show_spinner=True)
 def cached_get_target_round(season: int) -> int:
     return get_target_round(season)
 
 
-@st.cache_data(ttl=60 * 60 * 24, show_spinner=False)
+@st.cache_data(ttl=60 * 60 * 24, show_spinner=True)
 def cached_get_target_season() -> int:
     return get_target_season()
 
 
-@st.cache_data(ttl=60 * 60 * 24, show_spinner=False)
+@st.cache_data(ttl=60 * 60 * 24, show_spinner=True)
 def cached_retrieve_basic_info(season: int) -> dict:
     return retrieve_basic_info(season)
 
 
-@st.cache_data(ttl=60 * 60, show_spinner=False)
+@st.cache_data(ttl=60 * 60, show_spinner=True)
 def cached_retrieve_data(season: int, round_num: int) -> RoundData:
     return retrieve_data(season, round_num)
 
 
-@st.cache_data(ttl=60 * 60 * 24, show_spinner=False)
+@st.cache_data(ttl=60 * 60 * 24, show_spinner=True)
 def cached_load_geo_data(geo_file_name: str) -> dict:
     return load_geo_data(
         geo_file_name=geo_file_name,
@@ -66,7 +75,7 @@ def cached_load_geo_data(geo_file_name: str) -> dict:
     )
 
 
-@st.cache_data(ttl=60 * 60, show_spinner=False)
+@st.cache_data(ttl=60 * 60, show_spinner=True)
 def cached_make_model_input_data(season: int) -> pd.DataFrame:
     df = load_current_data(
         season,
@@ -80,7 +89,7 @@ def cached_make_model_input_data(season: int) -> pd.DataFrame:
     return model_input_data
 
 
-@st.cache_resource(ttl=60 * 60 * 24, show_spinner=False)
+@st.cache_resource(ttl=60 * 60 * 24, show_spinner=True)
 def cached_ranker() -> Ranker:
     ranker = Ranker(
         bucket_name=BUCKET_NAME,
@@ -92,7 +101,7 @@ def cached_ranker() -> Ranker:
     return ranker
 
 
-@st.cache_resource(ttl=60 * 60 * 24, show_spinner=False)
+@st.cache_resource(ttl=60 * 60 * 24, show_spinner=True)
 def cached_classifier() -> Classifier:
     classifier = Classifier(
         bucket_name=BUCKET_NAME,
@@ -104,7 +113,7 @@ def cached_classifier() -> Classifier:
     return classifier
 
 
-@st.cache_data(ttl=60 * 60, show_spinner=False)
+@st.cache_data(ttl=60 * 60, show_spinner=True)
 def cached_winner_prediction_result(
     model_input_data: ModelInputData,
     _classifier: Classifier,
@@ -122,7 +131,7 @@ def cached_winner_prediction_result(
     return df
 
 
-@st.cache_data(ttl=60 * 60, show_spinner=False)
+@st.cache_data(ttl=60 * 60, show_spinner=True)
 def cached_rank_prediction_result(
     model_input_data: ModelInputData,
     _ranker: Ranker,
@@ -138,6 +147,101 @@ def cached_rank_prediction_result(
     df.sort_values(by="y_pred", ascending=True, inplace=True)
 
     return df
+
+
+def plot_schedule(roud_data: RoundData) -> None:
+    """Plot schedule figure
+    NOTE: This is adhoc function for design"""
+    df = pd.DataFrame(
+        [
+            round_data.fp1_time,
+            round_data.fp2_time,
+            round_data.fp3_time,
+            round_data.qualifying_time,
+            round_data.sprint_time,
+            round_data.race_time,
+        ],
+        columns=["Time"],
+        index=["FP1", "FP2", "FP3", "Qualifying", "Sprint", "Race"],
+    )
+    df.dropna(axis=0, how="any", inplace=True)
+    df.sort_values(by="Time", inplace=True, ascending=False)
+    
+    fig, ax = plt.subplots()
+    ax.xaxis_date(tz=pytz.timezone('Asia/Tokyo'))
+    colors = plt.cm.Pastel1.colors
+    
+    min_date = df['Time'].dt.date.min()
+    max_date = df['Time'].dt.date.max()
+    date_range = pd.date_range(min_date, max_date, freq='D')
+
+    for i, date in enumerate(date_range):
+        start_time = pd.Timestamp(date).tz_localize(pytz.timezone('Asia/Tokyo'))
+        end_time = start_time + pd.Timedelta(days=1)
+        ax.fill_betweenx(y=[-1, len(df)], x1=start_time, x2=end_time, color = colors[i % len(colors)] , alpha=0.3)
+        ax.annotate(f'{date:%m/%d %a}', xy=(start_time, len(df)), xytext=(10, -10),
+                    textcoords='offset points', ha='left', va='top')
+
+    for i, (_, row) in enumerate(df.iterrows()):
+        ax.scatter(row['Time'], i, color="red", s=20)
+
+    ax.set_yticks(range(len(df)))
+    ax.set_yticklabels(df.index)
+    ax.set_ylim(-0.5, len(df))
+
+    ax.set_xticks(df['Time'])
+    ax.xaxis.set_major_formatter(mdates.DateFormatter('%H:%M', tz=pytz.timezone('Asia/Tokyo')))
+    plt.xticks(rotation=45)
+    plt.tight_layout()
+    for spine in ax.spines.values():
+        spine.set_visible(False)
+    ax.set_aspect(0.2)
+    st.pyplot(fig)
+
+
+def plot_rank_prediction(df: pd.DataFrame) -> None:
+    """Plot rank prediction figure
+    NOTE: This is adhoc function for design"""
+    df["driver"] = df["driver"].apply(
+        lambda x: x.split("_")[1].upper() if len(x.split("_")) > 1 else x.upper()
+    )
+    grouped = df.groupby('y_pred')['driver'].apply(lambda x: ', '.join(x))
+
+    fig, ax = plt.subplots()
+    positions = range(len(grouped), 0, -1)
+    for pos, (rank, drivers) in zip(positions, grouped.items()):
+        ax.text(x=0, y=pos, s=f"P{rank}: {drivers}", verticalalignment='center', horizontalalignment="left")
+    ax.set_yticks([])
+    ax.set_xticks([])
+    ax.set_xlim(0, 1)
+    ax.set_ylim(0, len(grouped)+1)
+    for spine in ax.spines.values():
+        spine.set_visible(False)
+    st.pyplot(fig)
+
+
+def plot_winner_prediction(df: pd.DataFrame) -> None:
+    """Plot winner prediction figure
+    NOTE: This is adhoc function for design"""
+    df_winner_prediction_result.rename(
+        columns={"driver": "Driver", "y_pred": "Winning Probability"}, inplace=True
+    )
+    df["Driver"] = df["Driver"].apply(
+        lambda x: x.split("_")[1].upper() if len(x.split("_")) > 1 else x.upper()
+    )
+    fig, ax = plt.subplots()
+    sns.barplot(
+        y="Driver",
+        x="Winning Probability",
+        data=df,
+        orient="h",
+        ax=ax,
+        color="skyblue",
+    )
+    ax.set_ylabel("")
+    ax.set_xlim(0, 1)
+    st.pyplot(fig)
+
 
 
 # Identify the target round to show
@@ -173,28 +277,45 @@ st.header(f"{SEASON} Round {round_data.round_num}: {round_data.gp_name}")
 
 # Show the schedule
 st.subheader("Schedule")
-st.write(
-    f"FP1: {round_data.fp1_time.strftime('%m/%d %H:%M') if round_data.fp1_time else 'TBA/Unknown'}"
-)
-st.write(
-    f"FP2: {round_data.fp2_time.strftime('%m/%d %H:%M') if round_data.fp2_time else 'TBA/Unknown'}"
-)
-st.write(
-    f"FP3: {round_data.fp3_time.strftime('%m/%d %H:%M') if round_data.fp3_time else 'TBA/Unknown'}"
-)
-st.write(
-    f"Qualifying: {round_data.qualifying_time.strftime('%m/%d %H:%M') if round_data.qualifying_time else 'TBA/Unknown'}"
-)
-st.write(
-    f"Sprint: {round_data.sprint_time.strftime('%m/%d %H:%M') if round_data.sprint_time else 'TBA/Unknown'}"
-)
-st.write(
-    f"Race: {round_data.race_time.strftime('%m/%d %H:%M') if round_data.race_time else 'TBA/Unknown'}"
-)
+plot_schedule(round_data)
 
 
 # Show the circuits layout
 st.subheader("Circuit Layout")
+
+lon = [139.759455, 139.744728, 139.730001, 139.715274]
+lat = [35.682839, 35.663452, 35.644065, 35.624678]
+
+# データフレームを作成します。
+df = pd.DataFrame({"lon": lon, "lat": lat})
+
+# 各行が線の始点と終点を表すようにデータフレームを変換します。
+df["start_lon"] = df["lon"].shift(1)
+df["start_lat"] = df["lat"].shift(1)
+df = df.dropna()
+
+# LineLayerを作成します。
+line_layer = pdk.Layer(
+    "LineLayer",
+    df,
+    get_source_position="[start_lon, start_lat]",
+    get_target_position="[lon, lat]",
+    get_width=5,
+    get_color=[255, 0, 0],
+    pickable=True,
+    auto_highlight=True,
+)
+
+# デッキを作成し、レイヤーを追加します。
+deck = pdk.Deck(
+    layers=[line_layer],
+    initial_view_state=pdk.ViewState(
+        latitude=35.682839, longitude=139.759455, zoom=11, pitch=50
+    ),
+)
+st.pydeck_chart(deck)
+
+
 geojson_data = cached_load_geo_data(
     geo_file_name=DICT_CONFIG["gp_circuits"][round_data.gp_name]
 )
@@ -213,16 +334,20 @@ else:
     st.warning("There is not available data")
 
 # Show race prediction
-st.subheader("AI Prediction")
 model_input_data = cached_make_model_input_data(SEASON)
 ranker = cached_ranker()
 classifier = cached_classifier()
+
+st.subheader("Winner Prediction")
 df_winner_prediction_result = cached_winner_prediction_result(
     model_input_data, classifier, SEASON, round_to_show
 )
-st.dataframe(df_winner_prediction_result)
+plot_winner_prediction(df_winner_prediction_result)
 
+st.subheader("Rank Prediction")
 df_rank_prediction_result = cached_rank_prediction_result(
     model_input_data, ranker, SEASON, round_to_show
 )
-st.dataframe(df_rank_prediction_result)
+plot_rank_prediction(df_rank_prediction_result)
+
+st.dataframe(df_winner_prediction_result)
