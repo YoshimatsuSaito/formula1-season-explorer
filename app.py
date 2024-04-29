@@ -1,26 +1,18 @@
 import os
-import pytz
 
 import pandas as pd
-import pydeck as pdk
-import seaborn as sns
 import streamlit as st
 from dotenv import load_dotenv
-from matplotlib import pyplot as plt
-from matplotlib import dates as mdates
 
 from modules.ergast_api import RoundData, retrieve_data
 from modules.geo import load_geo_data
 from modules.model.current_data_retriever import load_current_data
 from modules.model.model import Classifier, Ranker
 from modules.model.preprocess import ModelInputData, make_model_input_data
-from modules.utils import (
-    get_target_previous_season_round,
-    get_target_round,
-    get_target_season,
-    load_config,
-    retrieve_basic_info,
-)
+from modules.utils import (get_target_previous_season_round, get_target_round,
+                           get_target_season, load_config, retrieve_basic_info)
+from ui import (plot_circuit, plot_rank_prediction, plot_schedule,
+                plot_winner_prediction, show_actual_results)
 
 load_dotenv()
 
@@ -149,101 +141,6 @@ def cached_rank_prediction_result(
     return df
 
 
-def plot_schedule(roud_data: RoundData) -> None:
-    """Plot schedule figure
-    NOTE: This is adhoc function for design"""
-    df = pd.DataFrame(
-        [
-            round_data.fp1_time,
-            round_data.fp2_time,
-            round_data.fp3_time,
-            round_data.qualifying_time,
-            round_data.sprint_time,
-            round_data.race_time,
-        ],
-        columns=["Time"],
-        index=["FP1", "FP2", "FP3", "Qualifying", "Sprint", "Race"],
-    )
-    df.dropna(axis=0, how="any", inplace=True)
-    df.sort_values(by="Time", inplace=True, ascending=False)
-    
-    fig, ax = plt.subplots()
-    ax.xaxis_date(tz=pytz.timezone('Asia/Tokyo'))
-    colors = plt.cm.Pastel1.colors
-    
-    min_date = df['Time'].dt.date.min()
-    max_date = df['Time'].dt.date.max()
-    date_range = pd.date_range(min_date, max_date, freq='D')
-
-    for i, date in enumerate(date_range):
-        start_time = pd.Timestamp(date).tz_localize(pytz.timezone('Asia/Tokyo'))
-        end_time = start_time + pd.Timedelta(days=1)
-        ax.fill_betweenx(y=[-1, len(df)], x1=start_time, x2=end_time, color = colors[i % len(colors)] , alpha=0.3)
-        ax.annotate(f'{date:%m/%d %a}', xy=(start_time, len(df)), xytext=(10, -10),
-                    textcoords='offset points', ha='left', va='top')
-
-    for i, (_, row) in enumerate(df.iterrows()):
-        ax.scatter(row['Time'], i, color="red", s=20)
-
-    ax.set_yticks(range(len(df)))
-    ax.set_yticklabels(df.index)
-    ax.set_ylim(-0.5, len(df))
-
-    ax.set_xticks(df['Time'])
-    ax.xaxis.set_major_formatter(mdates.DateFormatter('%H:%M', tz=pytz.timezone('Asia/Tokyo')))
-    plt.xticks(rotation=45)
-    plt.tight_layout()
-    for spine in ax.spines.values():
-        spine.set_visible(False)
-    ax.set_aspect(0.2)
-    st.pyplot(fig)
-
-
-def plot_rank_prediction(df: pd.DataFrame) -> None:
-    """Plot rank prediction figure
-    NOTE: This is adhoc function for design"""
-    df["driver"] = df["driver"].apply(
-        lambda x: x.split("_")[1].upper() if len(x.split("_")) > 1 else x.upper()
-    )
-    grouped = df.groupby('y_pred')['driver'].apply(lambda x: ', '.join(x))
-
-    fig, ax = plt.subplots()
-    positions = range(len(grouped), 0, -1)
-    for pos, (rank, drivers) in zip(positions, grouped.items()):
-        ax.text(x=0, y=pos, s=f"P{rank}: {drivers}", verticalalignment='center', horizontalalignment="left")
-    ax.set_yticks([])
-    ax.set_xticks([])
-    ax.set_xlim(0, 1)
-    ax.set_ylim(0, len(grouped)+1)
-    for spine in ax.spines.values():
-        spine.set_visible(False)
-    st.pyplot(fig)
-
-
-def plot_winner_prediction(df: pd.DataFrame) -> None:
-    """Plot winner prediction figure
-    NOTE: This is adhoc function for design"""
-    df_winner_prediction_result.rename(
-        columns={"driver": "Driver", "y_pred": "Winning Probability"}, inplace=True
-    )
-    df["Driver"] = df["Driver"].apply(
-        lambda x: x.split("_")[1].upper() if len(x.split("_")) > 1 else x.upper()
-    )
-    fig, ax = plt.subplots()
-    sns.barplot(
-        y="Driver",
-        x="Winning Probability",
-        data=df,
-        orient="h",
-        ax=ax,
-        color="skyblue",
-    )
-    ax.set_ylabel("")
-    ax.set_xlim(0, 1)
-    st.pyplot(fig)
-
-
-
 # Identify the target round to show
 SEASON = cached_get_target_season()
 round_to_show = cached_get_target_round(SEASON)
@@ -282,54 +179,19 @@ plot_schedule(round_data)
 
 # Show the circuits layout
 st.subheader("Circuit Layout")
-
-lon = [139.759455, 139.744728, 139.730001, 139.715274]
-lat = [35.682839, 35.663452, 35.644065, 35.624678]
-
-# データフレームを作成します。
-df = pd.DataFrame({"lon": lon, "lat": lat})
-
-# 各行が線の始点と終点を表すようにデータフレームを変換します。
-df["start_lon"] = df["lon"].shift(1)
-df["start_lat"] = df["lat"].shift(1)
-df = df.dropna()
-
-# LineLayerを作成します。
-line_layer = pdk.Layer(
-    "LineLayer",
-    df,
-    get_source_position="[start_lon, start_lat]",
-    get_target_position="[lon, lat]",
-    get_width=5,
-    get_color=[255, 0, 0],
-    pickable=True,
-    auto_highlight=True,
-)
-
-# デッキを作成し、レイヤーを追加します。
-deck = pdk.Deck(
-    layers=[line_layer],
-    initial_view_state=pdk.ViewState(
-        latitude=35.682839, longitude=139.759455, zoom=11, pitch=50
-    ),
-)
-st.pydeck_chart(deck)
-
-
 geojson_data = cached_load_geo_data(
     geo_file_name=DICT_CONFIG["gp_circuits"][round_data.gp_name]
 )
 chart_data = pd.DataFrame(
     geojson_data["features"][0]["geometry"]["coordinates"], columns=["lon", "lat"]
 )
-st.map(chart_data, size=10)
+plot_circuit(chart_data)
 
 
 # Show the results of previous hosting
 st.subheader(f"Results from last hosting: {previous_season}")
 if previous_data is not None:
-    st.dataframe(previous_data.df_qualifying_results)
-    st.dataframe(previous_data.df_race_result)
+    show_actual_results(previous_data)
 else:
     st.warning("There is not available data")
 
@@ -349,5 +211,3 @@ df_rank_prediction_result = cached_rank_prediction_result(
     model_input_data, ranker, SEASON, round_to_show
 )
 plot_rank_prediction(df_rank_prediction_result)
-
-st.dataframe(df_winner_prediction_result)
