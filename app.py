@@ -5,7 +5,7 @@ import streamlit as st
 from dotenv import load_dotenv
 
 from modules.model import Classifier
-from modules.preprocess import ModelInputData, make_datamart, add_features
+from modules.preprocess import ModelInputData, make_datamart, add_features, add_future_race_row
 from modules.utils import load_config, get_latest_grandprix
 from modules.load_csv_data import load_csv_data
 from ui import plot_winner_prediction
@@ -30,8 +30,12 @@ def cached_calendar() -> pd.DataFrame:
     return df
 
 @st.cache_data(ttl=60 * 60, show_spinner=True)
-def cached_make_model_input_data() -> pd.DataFrame:
+def cached_make_model_input_data(df_calendar: pd.DataFrame) -> pd.DataFrame:
+    # Make datamart from past result
     df = make_datamart(bucket_name=BUCKET_NAME)
+    # Add future race rows to datamart
+    df = add_future_race_row(df_datamart=df, df_calendar=df_calendar)
+    # Make features to predict
     df = add_features(df)
     model_input_data = ModelInputData(df=df)
     return model_input_data
@@ -86,7 +90,7 @@ grandprix_to_show = df_calendar.loc[df_calendar["round"]==round_to_show, "grandp
 st.header(f"{SEASON} Round {round_to_show}: {grandprix_to_show}")
 
 # Show race prediction
-model_input_data = cached_make_model_input_data()
+model_input_data = cached_make_model_input_data(df_calendar=df_calendar)
 classifier = cached_classifier()
 
 st.subheader("Winner Prediction")
@@ -94,3 +98,13 @@ df_winner_prediction_result = cached_winner_prediction_result(
     model_input_data, classifier, SEASON, round_to_show
 )
 plot_winner_prediction(df_winner_prediction_result)
+
+
+if __name__ == "__main__":
+    df_calendar = load_csv_data(bucket_name=BUCKET_NAME, key=f"calendar/{SEASON}.csv")
+    # Make datamart from past result
+    df = make_datamart(bucket_name=BUCKET_NAME)
+    # Add future race rows to datamart
+    df = add_future_race_row(df_datamart=df, df_calendar=df_calendar)
+    # Make features to predict
+    df = add_features(df)

@@ -68,6 +68,29 @@ def make_datamart(bucket_name: str) -> pd.DataFrame:
     return df
 
 
+def add_future_race_row(df_datamart: pd.DataFrame, df_calendar: pd.DataFrame) -> pd.DataFrame:
+    """Add row of future races for prediction"""
+    # Consider latest season only
+    latest_season = df_datamart["season"].max()
+    # Extract all drivers who drove in this season
+    list_latest_driver = df_datamart.loc[df_datamart["season"]==latest_season, "driver"].unique().tolist()
+    # Extract latest past round
+    latest_round = df_datamart.loc[df_datamart["season"]==latest_season, "round"].max()
+
+    # Add rows of future races
+    df_future = df_calendar.loc[df_calendar["round"]>latest_round]
+    if not df_future.empty:
+        for _, row in df_future.iterrows():
+            # Create all drivers' row
+            df_tmp = pd.DataFrame({"driver": list_latest_driver})
+            df_tmp["season"] = latest_season
+            df_tmp["round"] = row["round"]
+            df_tmp["grandprix"] = row["grandprix"]
+            # Concatenate
+            df_datamart = pd.concat([df_datamart, df_tmp])
+    return df_datamart
+
+
 def add_features(df: pd.DataFrame) -> pd.DataFrame:
     """Add features to datamart for model training and inference"""
 
