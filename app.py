@@ -1,14 +1,16 @@
 import os
 
+import numpy as np
 import pandas as pd
 import streamlit as st
 from dotenv import load_dotenv
 
 from modules.model import Classifier
 from modules.preprocess import ModelInputData, make_datamart, add_features, add_future_race_row
-from modules.utils import load_config, get_latest_grandprix
+from modules.utils import load_config
 from modules.load_csv_data import load_csv_data
-from ui import plot_winner_prediction
+from ui import plot_winner_prediction, plot_calendar, get_round_grandprix_from_sidebar, plot_circuit
+from modules.geo import load_geo_data
 
 load_dotenv()
 
@@ -25,12 +27,18 @@ DICT_CONFIG = load_config("./config/config.yml")
 SEASON = DICT_CONFIG["season"]
 
 @st.cache_data(ttl=60 * 60 * 24 * 7, show_spinner=True)
-def cached_calendar() -> pd.DataFrame:
+def _cached_calendar() -> pd.DataFrame:
     df = load_csv_data(bucket_name=BUCKET_NAME, key=f"calendar/{SEASON}.csv")
     return df
 
+
+@st.cache_data(ttl=60 * 60 * 24 * 7, show_spinner=True)
+def _cached_geodata(grandprix: str) -> np.array:
+    geo_json = load_geo_data(bucket_name=BUCKET_NAME, geo_file_name=DICT_CONFIG["gp_circuits"][grandprix], s3_geo_data_key=DICT_CONFIG["s3_geo_data_key"])
+    return np.array(geo_json["features"][0]["geometry"]["coordinates"])
+
 @st.cache_data(ttl=60 * 60, show_spinner=True)
-def cached_make_model_input_data(df_calendar: pd.DataFrame) -> pd.DataFrame:
+def _cached_make_model_input_data(df_calendar: pd.DataFrame) -> pd.DataFrame:
     # Make datamart from past result
     df = make_datamart(bucket_name=BUCKET_NAME)
     # Add future race rows to datamart
@@ -42,7 +50,7 @@ def cached_make_model_input_data(df_calendar: pd.DataFrame) -> pd.DataFrame:
 
 
 @st.cache_resource(ttl=60 * 60 * 24, show_spinner=True)
-def cached_classifier() -> Classifier:
+def _cached_classifier() -> Classifier:
     classifier = Classifier(
         bucket_name=BUCKET_NAME,
         aws_access_key_id=AWS_ACCESS_KEY_ID,
@@ -54,7 +62,7 @@ def cached_classifier() -> Classifier:
 
 
 @st.cache_data(ttl=60 * 60, show_spinner=True)
-def cached_winner_prediction_result(
+def _cached_winner_prediction_result(
     model_input_data: ModelInputData,
     _classifier: Classifier,
     season: int,
@@ -71,33 +79,29 @@ def cached_winner_prediction_result(
     return df
 
 
-# Identify the target round to show
-df_calendar = cached_calendar()
-ser_default = get_latest_grandprix(df_calendar=df_calendar)
-dict_options = {
-    round_num: f"Rd. {round_num}: {grandprix}"
-    for round_num, grandprix in zip(df_calendar["round"].tolist(), df_calendar["grandprix"].tolist())
-}
-round_to_show = st.sidebar.selectbox(
-    "Choose Grand Prix",
-    options=list(dict_options.keys()),
-    format_func=lambda x: dict_options[x],
-    index=int(ser_default["round"]) - 1,
-)
-grandprix_to_show = df_calendar.loc[df_calendar["round"]==round_to_show, "grandprix"].iloc[0]
+# Create sidebar and get round and grandprix
+df_calendar = _cached_calendar()
+round_to_show, grandprix_to_show = get_round_grandprix_from_sidebar(df_calendar=df_calendar)
 
-# Show the data
-st.header(f"{SEASON} Round {round_to_show}: {grandprix_to_show}")
+# Show page title and circuit layout
+col_title, col_circuit = st.columns([0.8, 0.2])
+col_title.header(f"{SEASON} Round {round_to_show}: {grandprix_to_show}")
+array_geo = _cached_geodata(grandprix=grandprix_to_show)
+plot_circuit(array_geo=array_geo, col_circuit=col_circuit)
+
+
+# Show calendar
+plot_calendar(df_calendar=df_calendar)
+
 
 # Show race prediction
-model_input_data = cached_make_model_input_data(df_calendar=df_calendar)
-classifier = cached_classifier()
-
 st.subheader("Winner Prediction")
-df_winner_prediction_result = cached_winner_prediction_result(
+model_input_data = _cached_make_model_input_data(df_calendar=df_calendar)
+classifier = _cached_classifier()
+df_winner_prediction_result = _cached_winner_prediction_result(
     model_input_data, classifier, SEASON, round_to_show
 )
-plot_winner_prediction(df_winner_prediction_result)
+plot_winner_prediction(df_winner_prediction_result=df_winner_prediction_result)
 
 
 if __name__ == "__main__":
