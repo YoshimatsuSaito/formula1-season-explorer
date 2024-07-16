@@ -84,11 +84,9 @@ df_calendar = _cached_calendar()
 round_to_show, grandprix_to_show = get_round_grandprix_from_sidebar(df_calendar=df_calendar)
 
 # Show page title and circuit layout
-col_title, col_circuit = st.columns([0.8, 0.2])
-col_title.header(f"{SEASON} Round {round_to_show}: {grandprix_to_show}")
+st.header(f"{SEASON} Round {round_to_show}: {grandprix_to_show}")
 array_geo = _cached_geodata(grandprix=grandprix_to_show)
-plot_circuit(array_geo=array_geo, col_circuit=col_circuit)
-
+plot_circuit(array_geo=array_geo)
 
 # Show calendar
 plot_calendar(df_calendar=df_calendar)

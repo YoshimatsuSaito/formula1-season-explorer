@@ -4,8 +4,6 @@ import seaborn as sns
 import streamlit as st
 from matplotlib import pyplot as plt
 from modules.utils import get_latest_grandprix
-from streamlit.delta_generator import DeltaGenerator
-
 
 def get_round_grandprix_from_sidebar(df_calendar: pd.DataFrame) -> tuple[int, str]:
     # Identify the target round to show
@@ -27,18 +25,12 @@ def get_round_grandprix_from_sidebar(df_calendar: pd.DataFrame) -> tuple[int, st
 def plot_calendar(df_calendar: pd.DataFrame) -> None:
     """Plot grandprix race date calendar"""
     with st.expander("Calendar"):
-        col1, col2, col3 = st.columns(3)
         for _, row in df_calendar.iterrows():
             str_expr = f"Rd. {row['round']}: {row['grandprix']} ({row['month']}/{row['date']})"
-            if row["round"] % 3 == 0:
-                col3.caption(str_expr)
-            elif row["round"] % 2 == 0:
-                col2.caption(str_expr)
-            else:
-                col1.caption(str_expr)
+            st.caption(str_expr)
 
 
-def plot_circuit(array_geo: np.array, col_circuit: DeltaGenerator) -> None:
+def plot_circuit(array_geo: np.array) -> None:
     longitude = array_geo[:, 0]
     latitude = array_geo[:, 1]
     fig, ax = plt.subplots()
@@ -49,7 +41,9 @@ def plot_circuit(array_geo: np.array, col_circuit: DeltaGenerator) -> None:
     ax.set_yticks([])
     ax.set_xlabel('')
     ax.set_ylabel('')
-    col_circuit.pyplot(fig)
+    with st.expander("Circuit layout"):
+        st.pyplot(fig)
+
 
 
 def plot_winner_prediction(df_winner_prediction_result: pd.DataFrame) -> None:
