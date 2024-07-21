@@ -95,3 +95,24 @@ def plot_pole_position_time(db: InmemoryDB, grandprix: str) -> None:
     plt.tight_layout()
     
     st.pyplot(plt)
+
+
+def show_user_search_result(db: InmemoryDB, list_result_type: list[str]) -> None:
+    """Show past result which user want to see"""
+
+    with st.expander("Show past results table"):
+        # Users choose result type
+        result_type = st.selectbox(label="Result type", options=list_result_type)
+        df_result_type_from_query = db.execute_query(f"SELECT DISTINCT season, round, grandprix FROM {result_type}")
+        # Users choose season
+        season = st.selectbox(label="Season", options=df_result_type_from_query["season"].unique().tolist())
+        df_season_from_query = db.execute_query(f"SELECT DISTINCT round, grandprix FROM {result_type} WHERE season = {season}")
+        df_season_from_query.sort_values(by=["round"], ascending=True, inplace=True)
+        # Users choose round (grandprix)
+        round_options = df_season_from_query.apply(lambda row: f"Round. {row['round']}: {row['grandprix']}", axis=1)
+        selected_round = st.selectbox("Select a Grand Prix", round_options, index=len(round_options)-1)
+        # Show the grandprix result
+        selected_rows = df_season_from_query.loc[round_options == selected_round]
+        round_num = selected_rows["round"].iloc[0]
+        df_target = db.execute_query(f"SELECT * FROM {result_type} WHERE season = {season} AND round = {round_num}")
+        st.dataframe(df_target, hide_index=True)

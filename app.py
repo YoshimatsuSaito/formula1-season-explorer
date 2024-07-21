@@ -9,7 +9,7 @@ from modules.model import Classifier
 from modules.preprocess import ModelInputData, make_datamart, add_features, add_future_race_row
 from modules.utils import load_config
 from modules.load_csv_data import load_csv_data
-from ui import plot_winner_prediction, plot_calendar, get_round_grandprix_from_sidebar, plot_circuit, plot_pole_position_time
+from ui import plot_winner_prediction, plot_calendar, get_round_grandprix_from_sidebar, plot_circuit, plot_pole_position_time, show_user_search_result
 from modules.geo import load_geo_data
 from modules.inmemory_db import InmemoryDB
 
@@ -92,7 +92,7 @@ df_calendar = _cached_calendar()
 round_to_show, grandprix_to_show = get_round_grandprix_from_sidebar(df_calendar=df_calendar)
 
 # Show page title and circuit layout
-st.header(f"{SEASON} Round {round_to_show}: {grandprix_to_show}")
+st.header(f"{SEASON} Round {round_to_show}: {grandprix_to_show} GrandPrix")
 array_geo = _cached_geodata(grandprix=grandprix_to_show)
 plot_circuit(array_geo=array_geo)
 
@@ -100,13 +100,15 @@ plot_circuit(array_geo=array_geo)
 plot_calendar(df_calendar=df_calendar)
 
 # Show past result
-st.subheader("Past result")
+st.subheader(f"Analysis of {grandprix_to_show} GrandPrix")
 db = _cached_inmemory_db()
+
+# Users search
+show_user_search_result(db=db, list_result_type=list(DICT_CONFIG["s3_grandprix_result_data_key"].keys()))
 
 # Pole time
 st.markdown("#### Pole position time")
 plot_pole_position_time(db=db, grandprix=grandprix_to_show)
-
 
 # Show race prediction
 st.subheader("Winner Prediction")
