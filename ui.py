@@ -4,6 +4,8 @@ import seaborn as sns
 import streamlit as st
 from matplotlib import pyplot as plt
 from modules.utils import get_latest_grandprix
+from modules.inmemory_db import InmemoryDB
+
 
 def get_round_grandprix_from_sidebar(df_calendar: pd.DataFrame) -> tuple[int, str]:
     """ Identify the target round to show """
@@ -67,3 +69,29 @@ def plot_winner_prediction(df_winner_prediction_result: pd.DataFrame) -> None:
     ax.set_ylabel("")
     ax.set_xlim(0, 1)
     st.pyplot(fig)
+
+
+def plot_pole_position_time(db: InmemoryDB, grandprix: str) -> None:
+    """Plot pole position time"""
+    query = f"""
+    SELECT season, q3_sec 
+    FROM qualifying 
+    WHERE grandprix = '{grandprix}' 
+    AND position = 1
+    """
+    df = db.execute_query(query)
+    
+    plt.figure(figsize=(12, 8))
+    ax = sns.lineplot(data=df, x='season', y='q3_sec', marker='o')
+    ax.set_xlabel('Year', fontsize=14)
+    ax.set_ylabel('sec', fontsize=14)
+    ax.set_xticks(df['season'])
+    ax.set_xticklabels(df['season'], rotation=45)
+    
+    # Annotate each point with the time value
+    for i, row in df.iterrows():
+        ax.annotate(f"{row['q3_sec']:.2f}", (row['season'], row['q3_sec']), textcoords="offset points", xytext=(0,10), ha='center')
+
+    plt.tight_layout()
+    
+    st.pyplot(plt)

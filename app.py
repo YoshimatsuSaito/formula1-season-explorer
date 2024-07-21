@@ -9,7 +9,7 @@ from modules.model import Classifier
 from modules.preprocess import ModelInputData, make_datamart, add_features, add_future_race_row
 from modules.utils import load_config
 from modules.load_csv_data import load_csv_data
-from ui import plot_winner_prediction, plot_calendar, get_round_grandprix_from_sidebar, plot_circuit
+from ui import plot_winner_prediction, plot_calendar, get_round_grandprix_from_sidebar, plot_circuit, plot_pole_position_time
 from modules.geo import load_geo_data
 from modules.inmemory_db import InmemoryDB
 
@@ -102,9 +102,11 @@ plot_calendar(df_calendar=df_calendar)
 # Show past result
 st.subheader("Past result")
 db = _cached_inmemory_db()
-query = f"SELECT * FROM race_result WHERE grandprix = '{grandprix_to_show}'"
-df_past = db.execute_query(query)
-st.dataframe(df_past)
+
+# Pole time
+st.markdown("#### Pole position time")
+plot_pole_position_time(db=db, grandprix=grandprix_to_show)
+
 
 # Show race prediction
 st.subheader("Winner Prediction")
