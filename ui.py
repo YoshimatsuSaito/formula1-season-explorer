@@ -6,7 +6,7 @@ from matplotlib import pyplot as plt
 from modules.utils import get_latest_grandprix
 
 def get_round_grandprix_from_sidebar(df_calendar: pd.DataFrame) -> tuple[int, str]:
-    # Identify the target round to show
+    """ Identify the target round to show """
     ser_default = get_latest_grandprix(df_calendar=df_calendar)
     dict_options = {
         round_num: f"Rd. {round_num}: {grandprix}"

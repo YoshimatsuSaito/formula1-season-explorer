@@ -11,6 +11,7 @@ from modules.utils import load_config
 from modules.load_csv_data import load_csv_data
 from ui import plot_winner_prediction, plot_calendar, get_round_grandprix_from_sidebar, plot_circuit
 from modules.geo import load_geo_data
+from modules.inmemory_db import InmemoryDB
 
 load_dotenv()
 
@@ -79,6 +80,13 @@ def _cached_winner_prediction_result(
     return df
 
 
+@st.cache_resource(ttl=60 * 60, show_spinner=True)
+def _cached_inmemory_db() -> InmemoryDB:
+    db = InmemoryDB(bucket_name=BUCKET_NAME)
+    db.create_inmemory_db(dict_csv_key=DICT_CONFIG["s3_grandprix_result_data_key"])
+    return db
+
+
 # Create sidebar and get round and grandprix
 df_calendar = _cached_calendar()
 round_to_show, grandprix_to_show = get_round_grandprix_from_sidebar(df_calendar=df_calendar)
@@ -91,6 +99,12 @@ plot_circuit(array_geo=array_geo)
 # Show calendar
 plot_calendar(df_calendar=df_calendar)
 
+# Show past result
+st.subheader("Past result")
+db = _cached_inmemory_db()
+query = f"SELECT * FROM race_result WHERE grandprix = '{grandprix_to_show}'"
+df_past = db.execute_query(query)
+st.dataframe(df_past)
 
 # Show race prediction
 st.subheader("Winner Prediction")

@@ -1,6 +1,12 @@
 season: 2024
 s3_geo_data_key: "geo_data/circuits"
 s3_model_key : "model"
+s3_grandprix_result_data_key:
+  "race_result": "data/race_result.csv"
+  "fastest_lap": "data/fastest_lap.csv"
+  "grid": "data/grid.csv"
+  "qualify": "data/qualify.csv"
+  "pit_stop": "data/pit_stop.csv"
 
 gp_circuits:
   "Bahrain": "bh-2002.geojson"
