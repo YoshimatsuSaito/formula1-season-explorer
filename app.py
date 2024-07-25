@@ -9,23 +9,14 @@ from modules.geo import load_geo_data
 from modules.inmemory_db import InmemoryDB
 from modules.load_csv_data import load_csv_data
 from modules.model import Classifier
-from modules.preprocess import (
-    ModelInputData,
-    add_features,
-    add_future_race_row,
-    make_datamart,
-)
+from modules.preprocess import (ModelInputData, add_features,
+                                add_future_race_row, make_datamart)
 from modules.utils import load_config
-from ui import (
-    get_round_grandprix_from_sidebar,
-    plot_calendar,
-    plot_circuit,
-    plot_first_pit_stop_timing,
-    plot_pit_stop_count,
-    plot_pole_position_time,
-    plot_winner_prediction,
-    show_user_search_result,
-)
+from ui import (get_round_grandprix_from_sidebar, plot_calendar, plot_circuit,
+                plot_first_pit_stop_timing, plot_pit_stop_count,
+                plot_pole_position_time, plot_winner_prediction,
+                plot_winning_probability_from_each_grid,
+                show_user_search_result)
 
 load_dotenv()
 
@@ -125,14 +116,13 @@ plot_calendar(df_calendar=df_calendar)
 st.subheader(f"Analysis of {grandprix_to_show} GrandPrix")
 db = _cached_inmemory_db()
 
-## Users search
-show_user_search_result(
-    db=db, list_result_type=list(DICT_CONFIG["s3_grandprix_result_data_key"].keys())
-)
-
 ## Pole time
 st.markdown("#### Pole position time")
 plot_pole_position_time(db=db, grandprix=grandprix_to_show)
+
+## Winning probability from each grid
+st.markdown("#### Winning probability from each grid")
+plot_winning_probability_from_each_grid(db=db, grandprix=grandprix_to_show)
 
 ## Pit stop count proportion
 st.markdown("#### Pit stop count proportion")
@@ -151,6 +141,10 @@ df_winner_prediction_result = _cached_winner_prediction_result(
 )
 plot_winner_prediction(df_winner_prediction_result=df_winner_prediction_result)
 
+## Users search
+show_user_search_result(
+    db=db, list_result_type=list(DICT_CONFIG["s3_grandprix_result_data_key"].keys())
+)
 
 if __name__ == "__main__":
     df_calendar = load_csv_data(bucket_name=BUCKET_NAME, key=f"calendar/{SEASON}.csv")

@@ -87,8 +87,8 @@ def plot_pole_position_time(db: InmemoryDB, grandprix: str) -> None:
     """
     df = db.execute_query(query)
 
-    plt.figure(figsize=(12, 8))
-    ax = sns.lineplot(data=df, x="season", y="q3_sec", marker="o")
+    plt.figure()
+    ax = sns.lineplot(data=df, x="season", y="q3_sec", marker="o", color="skyblue")
     ax.set_xlabel("Year", fontsize=14)
     ax.set_ylabel("sec", fontsize=14)
     ax.set_xticks(df["season"])
@@ -110,7 +110,7 @@ def plot_pole_position_time(db: InmemoryDB, grandprix: str) -> None:
 
 
 def plot_pit_stop_count(db: InmemoryDB, grandprix: str) -> None:
-    """Plot pole position time"""
+    """Plot pit stop count proportion"""
     query = f"""
         SELECT
             driver,
@@ -133,8 +133,13 @@ def plot_pit_stop_count(db: InmemoryDB, grandprix: str) -> None:
     )
     df_pit_stop_count_distribution.columns = ["stop_count", "proportion"]
 
-    plt.figure(figsize=(12, 8))
-    sns.barplot(x="stop_count", y="proportion", data=df_pit_stop_count_distribution)
+    plt.figure()
+    sns.barplot(
+        x="stop_count",
+        y="proportion",
+        data=df_pit_stop_count_distribution,
+        color="skyblue",
+    )
     plt.ylim([0, 1])
     plt.xlabel("Pit Stop Count")
     plt.ylabel("Proportion")
@@ -145,7 +150,7 @@ def plot_pit_stop_count(db: InmemoryDB, grandprix: str) -> None:
 
 
 def plot_first_pit_stop_timing(db: InmemoryDB, grandprix: str) -> None:
-    """Plot pole position time"""
+    """Plot first pit stop timing"""
     query = f"""
         SELECT
             driver,
@@ -160,9 +165,11 @@ def plot_first_pit_stop_timing(db: InmemoryDB, grandprix: str) -> None:
     """
     df = db.execute_query(query)
 
-    plt.figure(figsize=(12, 8))
+    plt.figure()
     sns.histplot(
-        df.drop_duplicates(subset=["driver", "season"], keep="first")["lap"], bins=20
+        df.drop_duplicates(subset=["driver", "season"], keep="first")["lap"],
+        bins=20,
+        color="skyblue",
     )
     plt.xlabel("Number of laps")
     plt.ylabel("Frequency")
@@ -172,10 +179,57 @@ def plot_first_pit_stop_timing(db: InmemoryDB, grandprix: str) -> None:
     st.pyplot(plt)
 
 
+def plot_winning_probability_from_each_grid(db: InmemoryDB, grandprix: str) -> None:
+    """Plot winning probability from each grid"""
+    query = f"""
+        SELECT
+            grid.season,
+            grid.driver,
+            grid.position AS grid_position,
+            race_result.position
+        FROM
+            grid
+        JOIN
+            race_result
+        ON
+            grid.season = race_result.season
+            AND grid.driver = race_result.driver
+        WHERE
+            grid.grandprix = '{grandprix}'
+            AND race_result.grandprix = '{grandprix}'
+        ORDER BY
+            grid.season,
+            grid.position;
+    """
+    df = db.execute_query(query)
+    df_win_counts_from_each_grid = (
+        df[df["position"] == 1].groupby("grid_position").size()
+    )
+    df_total_counts_of_each_grid = df.groupby("grid_position").size()
+    df_win_rates_from_each_grid = (
+        df_win_counts_from_each_grid / df_total_counts_of_each_grid
+    ).reset_index()
+    df_win_rates_from_each_grid.columns = ["grid_position", "win_rate"]
+
+    plt.figure()
+    sns.barplot(
+        x="grid_position",
+        y="win_rate",
+        data=df_win_rates_from_each_grid,
+        color="skyblue",
+    )
+    plt.ylim([0, 1])
+    plt.xlabel("Grid position")
+    plt.ylabel("Proportion")
+    plt.tight_layout()
+
+    st.pyplot(plt)
+
+
 def show_user_search_result(db: InmemoryDB, list_result_type: list[str]) -> None:
     """Show past result which user want to see"""
 
-    with st.expander("Show past results table"):
+    with st.expander("Search past results"):
         # Users choose result type
         result_type = st.selectbox(label="Result type", options=list_result_type)
         df_result_type_from_query = db.execute_query(
