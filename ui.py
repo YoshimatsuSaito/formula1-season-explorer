@@ -179,8 +179,8 @@ def plot_first_pit_stop_timing(db: InmemoryDB, grandprix: str) -> None:
     st.pyplot(plt)
 
 
-def plot_winning_probability_from_each_grid(db: InmemoryDB, grandprix: str) -> None:
-    """Plot winning probability from each grid"""
+def plot_probability_from_each_grid(db: InmemoryDB, grandprix: str) -> None:
+    """Plot probability from each grid"""
     query = f"""
         SELECT
             grid.season,
@@ -202,6 +202,8 @@ def plot_winning_probability_from_each_grid(db: InmemoryDB, grandprix: str) -> N
             grid.position;
     """
     df = db.execute_query(query)
+
+    # Winning probability
     df_win_counts_from_each_grid = (
         df[df["position"] == 1].groupby("grid_position").size()
     )
@@ -221,6 +223,55 @@ def plot_winning_probability_from_each_grid(db: InmemoryDB, grandprix: str) -> N
     plt.ylim([0, 1])
     plt.xlabel("Grid position")
     plt.ylabel("Proportion")
+    plt.title("Winning rate")
+    plt.tight_layout()
+
+    st.pyplot(plt)
+
+    # Podium probability
+    df_podium_counts_from_each_grid = (
+        df[df["position"] <= 3].groupby("grid_position").size()
+    )
+    df_podium_rates_from_each_grid = (
+        df_podium_counts_from_each_grid / df_total_counts_of_each_grid
+    ).reset_index()
+    df_podium_rates_from_each_grid.columns = ["grid_position", "podium_rate"]
+
+    plt.figure()
+    sns.barplot(
+        x="grid_position",
+        y="podium_rate",
+        data=df_podium_rates_from_each_grid,
+        color="skyblue",
+    )
+    plt.ylim([0, 1])
+    plt.xlabel("Grid position")
+    plt.ylabel("Proportion")
+    plt.title("Podium rate")
+    plt.tight_layout()
+
+    st.pyplot(plt)
+
+    # Point probability
+    df_point_counts_from_each_grid = (
+        df[df["position"] <= 10].groupby("grid_position").size()
+    )
+    df_point_rates_from_each_grid = (
+        df_point_counts_from_each_grid / df_total_counts_of_each_grid
+    ).reset_index()
+    df_point_rates_from_each_grid.columns = ["grid_position", "point_rate"]
+
+    plt.figure()
+    sns.barplot(
+        x="grid_position",
+        y="point_rate",
+        data=df_point_rates_from_each_grid,
+        color="skyblue",
+    )
+    plt.ylim([0, 1])
+    plt.xlabel("Grid position")
+    plt.ylabel("Proportion")
+    plt.title("Point positions rate")
     plt.tight_layout()
 
     st.pyplot(plt)

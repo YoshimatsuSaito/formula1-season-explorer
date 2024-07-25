@@ -14,9 +14,8 @@ from modules.preprocess import (ModelInputData, add_features,
 from modules.utils import load_config
 from ui import (get_round_grandprix_from_sidebar, plot_calendar, plot_circuit,
                 plot_first_pit_stop_timing, plot_pit_stop_count,
-                plot_pole_position_time, plot_winner_prediction,
-                plot_winning_probability_from_each_grid,
-                show_user_search_result)
+                plot_pole_position_time, plot_probability_from_each_grid,
+                plot_winner_prediction, show_user_search_result)
 
 load_dotenv()
 
@@ -121,8 +120,8 @@ st.markdown("#### Pole position time")
 plot_pole_position_time(db=db, grandprix=grandprix_to_show)
 
 ## Winning probability from each grid
-st.markdown("#### Winning probability from each grid")
-plot_winning_probability_from_each_grid(db=db, grandprix=grandprix_to_show)
+st.markdown("#### Result Probabilities from each grid")
+plot_probability_from_each_grid(db=db, grandprix=grandprix_to_show)
 
 ## Pit stop count proportion
 st.markdown("#### Pit stop count proportion")
