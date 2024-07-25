@@ -21,11 +21,11 @@ class InmemoryDB:
                 df = load_csv_data(bucket_name=self.bucket_name, key=key)
                 query = f"CREATE TABLE {table_name} AS SELECT * FROM df"
                 self.con.execute(query)
-    
+
     def execute_query(self, query: str) -> pd.DataFrame:
         """Execute query"""
         return self.con.execute(query).fetchdf()
-    
-    def clone(self) -> None:
+
+    def close(self) -> None:
         """Clone connection"""
         self.con.close()

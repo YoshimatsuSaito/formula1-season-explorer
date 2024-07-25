@@ -5,13 +5,27 @@ import pandas as pd
 import streamlit as st
 from dotenv import load_dotenv
 
-from modules.model import Classifier
-from modules.preprocess import ModelInputData, make_datamart, add_features, add_future_race_row
-from modules.utils import load_config
-from modules.load_csv_data import load_csv_data
-from ui import plot_winner_prediction, plot_calendar, get_round_grandprix_from_sidebar, plot_circuit, plot_pole_position_time, show_user_search_result
 from modules.geo import load_geo_data
 from modules.inmemory_db import InmemoryDB
+from modules.load_csv_data import load_csv_data
+from modules.model import Classifier
+from modules.preprocess import (
+    ModelInputData,
+    add_features,
+    add_future_race_row,
+    make_datamart,
+)
+from modules.utils import load_config
+from ui import (
+    get_round_grandprix_from_sidebar,
+    plot_calendar,
+    plot_circuit,
+    plot_first_pit_stop_timing,
+    plot_pit_stop_count,
+    plot_pole_position_time,
+    plot_winner_prediction,
+    show_user_search_result,
+)
 
 load_dotenv()
 
@@ -27,6 +41,7 @@ if BUCKET_NAME is None or AWS_ACCESS_KEY_ID is None or AWS_SECRET_ACCESS_KEY is 
 DICT_CONFIG = load_config("./config/config.yml")
 SEASON = DICT_CONFIG["season"]
 
+
 @st.cache_data(ttl=60 * 60 * 24 * 7, show_spinner=True)
 def _cached_calendar() -> pd.DataFrame:
     df = load_csv_data(bucket_name=BUCKET_NAME, key=f"calendar/{SEASON}.csv")
@@ -35,8 +50,13 @@ def _cached_calendar() -> pd.DataFrame:
 
 @st.cache_data(ttl=60 * 60 * 24 * 7, show_spinner=True)
 def _cached_geodata(grandprix: str) -> np.array:
-    geo_json = load_geo_data(bucket_name=BUCKET_NAME, geo_file_name=DICT_CONFIG["gp_circuits"][grandprix], s3_geo_data_key=DICT_CONFIG["s3_geo_data_key"])
+    geo_json = load_geo_data(
+        bucket_name=BUCKET_NAME,
+        geo_file_name=DICT_CONFIG["gp_circuits"][grandprix],
+        s3_geo_data_key=DICT_CONFIG["s3_geo_data_key"],
+    )
     return np.array(geo_json["features"][0]["geometry"]["coordinates"])
+
 
 @st.cache_data(ttl=60 * 60, show_spinner=True)
 def _cached_make_model_input_data(df_calendar: pd.DataFrame) -> pd.DataFrame:
@@ -89,7 +109,9 @@ def _cached_inmemory_db() -> InmemoryDB:
 
 # Create sidebar and get round and grandprix
 df_calendar = _cached_calendar()
-round_to_show, grandprix_to_show = get_round_grandprix_from_sidebar(df_calendar=df_calendar)
+round_to_show, grandprix_to_show = get_round_grandprix_from_sidebar(
+    df_calendar=df_calendar
+)
 
 # Show page title and circuit layout
 st.header(f"{SEASON} Round {round_to_show}: {grandprix_to_show} GrandPrix")
@@ -103,12 +125,22 @@ plot_calendar(df_calendar=df_calendar)
 st.subheader(f"Analysis of {grandprix_to_show} GrandPrix")
 db = _cached_inmemory_db()
 
-# Users search
-show_user_search_result(db=db, list_result_type=list(DICT_CONFIG["s3_grandprix_result_data_key"].keys()))
+## Users search
+show_user_search_result(
+    db=db, list_result_type=list(DICT_CONFIG["s3_grandprix_result_data_key"].keys())
+)
 
-# Pole time
+## Pole time
 st.markdown("#### Pole position time")
 plot_pole_position_time(db=db, grandprix=grandprix_to_show)
+
+## Pit stop count proportion
+st.markdown("#### Pit stop count proportion")
+plot_pit_stop_count(db=db, grandprix=grandprix_to_show)
+
+## First pit stop timing
+st.markdown("#### First pit stop timing")
+plot_first_pit_stop_timing(db=db, grandprix=grandprix_to_show)
 
 # Show race prediction
 st.subheader("Winner Prediction")

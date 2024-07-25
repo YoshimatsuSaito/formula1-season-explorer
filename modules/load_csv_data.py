@@ -3,7 +3,6 @@ from io import StringIO
 import boto3
 import pandas as pd
 
-
 dict_dtype_columns = {
     "position": "Int64",
     "car_number": str,
