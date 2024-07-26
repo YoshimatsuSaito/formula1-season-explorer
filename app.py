@@ -9,13 +9,23 @@ from modules.geo import load_geo_data
 from modules.inmemory_db import InmemoryDB
 from modules.load_csv_data import load_csv_data
 from modules.model import Classifier
-from modules.preprocess import (ModelInputData, add_features,
-                                add_future_race_row, make_datamart)
+from modules.preprocess import (
+    ModelInputData,
+    add_features,
+    add_future_race_row,
+    make_datamart,
+)
 from modules.utils import load_config
-from ui import (get_round_grandprix_from_sidebar, plot_calendar,
-                create_first_pit_stop_timing_plot, create_pit_stop_count_plot,
-                create_pole_position_time_plot, create_probability_from_each_grid_plots,
-                create_winner_prediction_plot, show_user_search_result)
+from ui import (
+    create_first_pit_stop_timing_plot,
+    create_pit_stop_count_plot,
+    create_pole_position_time_plot,
+    create_probability_from_each_grid_plots,
+    create_winner_prediction_plot,
+    get_round_grandprix_from_sidebar,
+    plot_calendar,
+    show_user_search_result,
+)
 
 load_dotenv()
 
@@ -120,7 +130,9 @@ st.pyplot(fig_pole)
 
 ## Winning probability from each grid
 st.markdown("#### Result Probabilities from each grid")
-fig_win_prob, fig_pod_prob, fig_point_prob = create_probability_from_each_grid_plots(_db=db, grandprix=grandprix_to_show)
+fig_win_prob, fig_pod_prob, fig_point_prob = create_probability_from_each_grid_plots(
+    _db=db, grandprix=grandprix_to_show
+)
 st.pyplot(fig_win_prob)
 st.pyplot(fig_pod_prob)
 st.pyplot(fig_point_prob)
@@ -142,12 +154,16 @@ classifier = _cached_classifier()
 df_winner_prediction_result = _cached_winner_prediction_result(
     model_input_data, classifier, SEASON, round_to_show
 )
-fig_pred = create_winner_prediction_plot(df_winner_prediction_result=df_winner_prediction_result)
+fig_pred = create_winner_prediction_plot(
+    df_winner_prediction_result=df_winner_prediction_result
+)
 st.pyplot(fig_pred)
 
 ## Users search
 show_user_search_result(
-    db=db, list_result_type=list(DICT_CONFIG["s3_grandprix_result_data_key"].keys()), grandprix=grandprix_to_show
+    db=db,
+    list_result_type=list(DICT_CONFIG["s3_grandprix_result_data_key"].keys()),
+    grandprix=grandprix_to_show,
 )
 
 if __name__ == "__main__":

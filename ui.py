@@ -39,7 +39,8 @@ def plot_calendar(df_calendar: pd.DataFrame) -> None:
             )
             st.caption(str_expr)
 
-@st.cache_resource(ttl=60*10)
+
+@st.cache_resource(ttl=60 * 10)
 def plot_circuit(array_geo: np.array) -> Figure:
     longitude = array_geo[:, 0]
     latitude = array_geo[:, 1]
@@ -53,7 +54,8 @@ def plot_circuit(array_geo: np.array) -> Figure:
     ax.set_ylabel("")
     return fig
 
-@st.cache_resource(ttl=60*10)
+
+@st.cache_resource(ttl=60 * 10)
 def create_winner_prediction_plot(df_winner_prediction_result: pd.DataFrame) -> Figure:
     """Plot winner prediction figure
     NOTE: This is adhoc function for design"""
@@ -76,7 +78,8 @@ def create_winner_prediction_plot(df_winner_prediction_result: pd.DataFrame) -> 
     ax.set_xlim(0, 1)
     return fig
 
-@st.cache_resource(ttl=60*10)
+
+@st.cache_resource(ttl=60 * 10)
 def create_pole_position_time_plot(_db: InmemoryDB, grandprix: str) -> Figure:
     """Plot pole position time"""
     query = f"""
@@ -109,7 +112,8 @@ def create_pole_position_time_plot(_db: InmemoryDB, grandprix: str) -> Figure:
 
     return fig
 
-@st.cache_resource(ttl=60*10)
+
+@st.cache_resource(ttl=60 * 10)
 def create_pit_stop_count_plot(_db: InmemoryDB, grandprix: str) -> Figure:
     """Plot pit stop count proportion"""
     query = f"""
@@ -140,7 +144,7 @@ def create_pit_stop_count_plot(_db: InmemoryDB, grandprix: str) -> Figure:
         y="proportion",
         data=df_pit_stop_count_distribution,
         color="skyblue",
-        ax=ax
+        ax=ax,
     )
     ax.set_ylim([0, 1])
     ax.set_xlabel("Pit Stop Count")
@@ -150,7 +154,8 @@ def create_pit_stop_count_plot(_db: InmemoryDB, grandprix: str) -> Figure:
 
     return fig
 
-@st.cache_resource(ttl=60*10)
+
+@st.cache_resource(ttl=60 * 10)
 def create_first_pit_stop_timing_plot(_db: InmemoryDB, grandprix: str) -> Figure:
     """Plot first pit stop timing"""
     query = f"""
@@ -172,7 +177,7 @@ def create_first_pit_stop_timing_plot(_db: InmemoryDB, grandprix: str) -> Figure
         df.drop_duplicates(subset=["driver", "season"], keep="first")["lap"],
         bins=20,
         color="skyblue",
-        ax=ax
+        ax=ax,
     )
     ax.set_xlabel("Number of laps")
     ax.set_ylabel("Frequency")
@@ -181,8 +186,11 @@ def create_first_pit_stop_timing_plot(_db: InmemoryDB, grandprix: str) -> Figure
 
     return fig
 
-@st.cache_resource(ttl=60*10)
-def create_probability_from_each_grid_plots(_db: InmemoryDB, grandprix: str) -> tuple[Figure, Figure, Figure]:
+
+@st.cache_resource(ttl=60 * 10)
+def create_probability_from_each_grid_plots(
+    _db: InmemoryDB, grandprix: str
+) -> tuple[Figure, Figure, Figure]:
     """Plot probability from each grid"""
     query = f"""
         SELECT
@@ -222,7 +230,7 @@ def create_probability_from_each_grid_plots(_db: InmemoryDB, grandprix: str) -> 
         y="win_rate",
         data=df_win_rates_from_each_grid,
         color="skyblue",
-        ax=ax1
+        ax=ax1,
     )
     ax1.set_ylim([0, 1])
     ax1.set_xlabel("Grid position")
@@ -245,7 +253,7 @@ def create_probability_from_each_grid_plots(_db: InmemoryDB, grandprix: str) -> 
         y="podium_rate",
         data=df_podium_rates_from_each_grid,
         color="skyblue",
-        ax=ax2
+        ax=ax2,
     )
     ax2.set_ylim([0, 1])
     ax2.set_xlabel("Grid position")
@@ -268,7 +276,7 @@ def create_probability_from_each_grid_plots(_db: InmemoryDB, grandprix: str) -> 
         y="point_rate",
         data=df_point_rates_from_each_grid,
         color="skyblue",
-        ax=ax3
+        ax=ax3,
     )
     ax3.set_ylim([0, 1])
     ax3.set_xlabel("Grid position")
@@ -279,14 +287,18 @@ def create_probability_from_each_grid_plots(_db: InmemoryDB, grandprix: str) -> 
     return fig1, fig2, fig3
 
 
-def show_user_search_result(db: InmemoryDB, list_result_type: list[str], grandprix: str) -> None:
+def show_user_search_result(
+    db: InmemoryDB, list_result_type: list[str], grandprix: str
+) -> None:
     """Show past result which user want to see"""
 
-    list_result_type = [x if x != "qualify" else f"{x}ing" for x in list_result_type ]
+    list_result_type = [x if x != "qualify" else f"{x}ing" for x in list_result_type]
 
     with st.expander("Search past results"):
         # Users choose season
-        df_season = db.execute_query("SELECT DISTINCT season FROM race_result ORDER BY season")
+        df_season = db.execute_query(
+            "SELECT DISTINCT season FROM race_result ORDER BY season"
+        )
         season = st.selectbox(
             label="Season",
             options=df_season["season"],
@@ -294,10 +306,14 @@ def show_user_search_result(db: InmemoryDB, list_result_type: list[str], grandpr
         # Show the result
         dict_df = dict()
         for result_type in list_result_type:
-            dict_df[result_type] = db.execute_query(
+            df = db.execute_query(
                 f"SELECT * FROM {result_type} WHERE season = {season} AND grandprix = '{grandprix}'"
             )
+            if "position" in df.columns:
+                df.sort_values(by="position", inplace=True)
+            dict_df[result_type] = df
 
         for result_type in list_result_type:
             st.markdown(f"##### {result_type}")
+
             st.dataframe(dict_df[result_type], hide_index=True)
