@@ -3,6 +3,7 @@ import pandas as pd
 import seaborn as sns
 import streamlit as st
 from matplotlib import pyplot as plt
+from matplotlib.figure import Figure
 
 from modules.inmemory_db import InmemoryDB
 from modules.utils import get_latest_grandprix
@@ -38,8 +39,8 @@ def plot_calendar(df_calendar: pd.DataFrame) -> None:
             )
             st.caption(str_expr)
 
-
-def plot_circuit(array_geo: np.array) -> None:
+@st.cache_resource(ttl=60*10)
+def plot_circuit(array_geo: np.array) -> Figure:
     longitude = array_geo[:, 0]
     latitude = array_geo[:, 1]
     fig, ax = plt.subplots()
@@ -50,11 +51,10 @@ def plot_circuit(array_geo: np.array) -> None:
     ax.set_yticks([])
     ax.set_xlabel("")
     ax.set_ylabel("")
-    with st.expander("Circuit layout"):
-        st.pyplot(fig)
+    return fig
 
-
-def plot_winner_prediction(df_winner_prediction_result: pd.DataFrame) -> None:
+@st.cache_resource(ttl=60*10)
+def create_winner_prediction_plot(df_winner_prediction_result: pd.DataFrame) -> Figure:
     """Plot winner prediction figure
     NOTE: This is adhoc function for design"""
     df_winner_prediction_result.rename(
@@ -74,10 +74,10 @@ def plot_winner_prediction(df_winner_prediction_result: pd.DataFrame) -> None:
     )
     ax.set_ylabel("")
     ax.set_xlim(0, 1)
-    st.pyplot(fig)
+    return fig
 
-
-def plot_pole_position_time(db: InmemoryDB, grandprix: str) -> None:
+@st.cache_resource(ttl=60*10)
+def create_pole_position_time_plot(_db: InmemoryDB, grandprix: str) -> Figure:
     """Plot pole position time"""
     query = f"""
     SELECT season, q3_sec 
@@ -85,9 +85,10 @@ def plot_pole_position_time(db: InmemoryDB, grandprix: str) -> None:
     WHERE grandprix = '{grandprix}' 
     AND position = 1
     """
-    df = db.execute_query(query)
+    df = _db.execute_query(query)
 
-    plt.figure()
+    fig, ax = plt.subplots()
+    sns.lineplot(data=df, x="season", y="q3_sec", marker="o", color="skyblue", ax=ax)
     ax = sns.lineplot(data=df, x="season", y="q3_sec", marker="o", color="skyblue")
     ax.set_xlabel("Year", fontsize=14)
     ax.set_ylabel("sec", fontsize=14)
@@ -106,10 +107,10 @@ def plot_pole_position_time(db: InmemoryDB, grandprix: str) -> None:
 
     plt.tight_layout()
 
-    st.pyplot(plt)
+    return fig
 
-
-def plot_pit_stop_count(db: InmemoryDB, grandprix: str) -> None:
+@st.cache_resource(ttl=60*10)
+def create_pit_stop_count_plot(_db: InmemoryDB, grandprix: str) -> Figure:
     """Plot pit stop count proportion"""
     query = f"""
         SELECT
@@ -125,7 +126,7 @@ def plot_pit_stop_count(db: InmemoryDB, grandprix: str) -> None:
         GROUP BY
             driver, season
     """
-    df = db.execute_query(query)
+    df = _db.execute_query(query)
 
     # Distribution of pit stop count proportion
     df_pit_stop_count_distribution = (
@@ -133,23 +134,24 @@ def plot_pit_stop_count(db: InmemoryDB, grandprix: str) -> None:
     )
     df_pit_stop_count_distribution.columns = ["stop_count", "proportion"]
 
-    plt.figure()
+    fig, ax = plt.subplots()
     sns.barplot(
         x="stop_count",
         y="proportion",
         data=df_pit_stop_count_distribution,
         color="skyblue",
+        ax=ax
     )
-    plt.ylim([0, 1])
-    plt.xlabel("Pit Stop Count")
-    plt.ylabel("Proportion")
-    plt.title("2022 season ~")
+    ax.set_ylim([0, 1])
+    ax.set_xlabel("Pit Stop Count")
+    ax.set_ylabel("Proportion")
+    ax.set_title("2022 season ~")
     plt.tight_layout()
 
-    st.pyplot(plt)
+    return fig
 
-
-def plot_first_pit_stop_timing(db: InmemoryDB, grandprix: str) -> None:
+@st.cache_resource(ttl=60*10)
+def create_first_pit_stop_timing_plot(_db: InmemoryDB, grandprix: str) -> Figure:
     """Plot first pit stop timing"""
     query = f"""
         SELECT
@@ -163,23 +165,24 @@ def plot_first_pit_stop_timing(db: InmemoryDB, grandprix: str) -> None:
             AND
             season >= 2022
     """
-    df = db.execute_query(query)
+    df = _db.execute_query(query)
 
-    plt.figure()
+    fig, ax = plt.subplots()
     sns.histplot(
         df.drop_duplicates(subset=["driver", "season"], keep="first")["lap"],
         bins=20,
         color="skyblue",
+        ax=ax
     )
-    plt.xlabel("Number of laps")
-    plt.ylabel("Frequency")
-    plt.title("2022 season ~")
+    ax.set_xlabel("Number of laps")
+    ax.set_ylabel("Frequency")
+    ax.set_title("2022 season ~")
     plt.tight_layout()
 
-    st.pyplot(plt)
+    return fig
 
-
-def plot_probability_from_each_grid(db: InmemoryDB, grandprix: str) -> None:
+@st.cache_resource(ttl=60*10)
+def create_probability_from_each_grid_plots(_db: InmemoryDB, grandprix: str) -> tuple[Figure, Figure, Figure]:
     """Plot probability from each grid"""
     query = f"""
         SELECT
@@ -201,7 +204,7 @@ def plot_probability_from_each_grid(db: InmemoryDB, grandprix: str) -> None:
             grid.season,
             grid.position;
     """
-    df = db.execute_query(query)
+    df = _db.execute_query(query)
 
     # Winning probability
     df_win_counts_from_each_grid = (
@@ -213,20 +216,19 @@ def plot_probability_from_each_grid(db: InmemoryDB, grandprix: str) -> None:
     ).reset_index()
     df_win_rates_from_each_grid.columns = ["grid_position", "win_rate"]
 
-    plt.figure()
+    fig1, ax1 = plt.subplots()
     sns.barplot(
         x="grid_position",
         y="win_rate",
         data=df_win_rates_from_each_grid,
         color="skyblue",
+        ax=ax1
     )
-    plt.ylim([0, 1])
-    plt.xlabel("Grid position")
-    plt.ylabel("Proportion")
-    plt.title("Winning rate")
+    ax1.set_ylim([0, 1])
+    ax1.set_xlabel("Grid position")
+    ax1.set_ylabel("Proportion")
+    ax1.set_title("Winning rate")
     plt.tight_layout()
-
-    st.pyplot(plt)
 
     # Podium probability
     df_podium_counts_from_each_grid = (
@@ -237,20 +239,19 @@ def plot_probability_from_each_grid(db: InmemoryDB, grandprix: str) -> None:
     ).reset_index()
     df_podium_rates_from_each_grid.columns = ["grid_position", "podium_rate"]
 
-    plt.figure()
+    fig2, ax2 = plt.subplots()
     sns.barplot(
         x="grid_position",
         y="podium_rate",
         data=df_podium_rates_from_each_grid,
         color="skyblue",
+        ax=ax2
     )
-    plt.ylim([0, 1])
-    plt.xlabel("Grid position")
-    plt.ylabel("Proportion")
-    plt.title("Podium rate")
+    ax2.set_ylim([0, 1])
+    ax2.set_xlabel("Grid position")
+    ax2.set_ylabel("Proportion")
+    ax2.set_title("Podium rate")
     plt.tight_layout()
-
-    st.pyplot(plt)
 
     # Point probability
     df_point_counts_from_each_grid = (
@@ -261,51 +262,42 @@ def plot_probability_from_each_grid(db: InmemoryDB, grandprix: str) -> None:
     ).reset_index()
     df_point_rates_from_each_grid.columns = ["grid_position", "point_rate"]
 
-    plt.figure()
+    fig3, ax3 = plt.subplots()
     sns.barplot(
         x="grid_position",
         y="point_rate",
         data=df_point_rates_from_each_grid,
         color="skyblue",
+        ax=ax3
     )
-    plt.ylim([0, 1])
-    plt.xlabel("Grid position")
-    plt.ylabel("Proportion")
-    plt.title("Point positions rate")
+    ax3.set_ylim([0, 1])
+    ax3.set_xlabel("Grid position")
+    ax3.set_ylabel("Proportion")
+    ax3.set_title("Point positions rate")
     plt.tight_layout()
 
-    st.pyplot(plt)
+    return fig1, fig2, fig3
 
 
-def show_user_search_result(db: InmemoryDB, list_result_type: list[str]) -> None:
+def show_user_search_result(db: InmemoryDB, list_result_type: list[str], grandprix: str) -> None:
     """Show past result which user want to see"""
 
+    list_result_type = [x if x != "qualify" else f"{x}ing" for x in list_result_type ]
+
     with st.expander("Search past results"):
-        # Users choose result type
-        result_type = st.selectbox(label="Result type", options=list_result_type)
-        df_result_type_from_query = db.execute_query(
-            f"SELECT DISTINCT season, round, grandprix FROM {result_type}"
-        )
         # Users choose season
+        df_season = db.execute_query("SELECT DISTINCT season FROM race_result ORDER BY season")
         season = st.selectbox(
             label="Season",
-            options=df_result_type_from_query["season"].unique().tolist(),
+            options=df_season["season"],
         )
-        df_season_from_query = db.execute_query(
-            f"SELECT DISTINCT round, grandprix FROM {result_type} WHERE season = {season}"
-        )
-        df_season_from_query.sort_values(by=["round"], ascending=True, inplace=True)
-        # Users choose round (grandprix)
-        round_options = df_season_from_query.apply(
-            lambda row: f"Round. {row['round']}: {row['grandprix']}", axis=1
-        )
-        selected_round = st.selectbox(
-            "Select a Grand Prix", round_options, index=len(round_options) - 1
-        )
-        # Show the grandprix result
-        selected_rows = df_season_from_query.loc[round_options == selected_round]
-        round_num = selected_rows["round"].iloc[0]
-        df_target = db.execute_query(
-            f"SELECT * FROM {result_type} WHERE season = {season} AND round = {round_num}"
-        )
-        st.dataframe(df_target, hide_index=True)
+        # Show the result
+        dict_df = dict()
+        for result_type in list_result_type:
+            dict_df[result_type] = db.execute_query(
+                f"SELECT * FROM {result_type} WHERE season = {season} AND grandprix = '{grandprix}'"
+            )
+
+        for result_type in list_result_type:
+            st.markdown(f"##### {result_type}")
+            st.dataframe(dict_df[result_type], hide_index=True)

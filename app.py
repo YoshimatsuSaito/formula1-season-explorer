@@ -12,10 +12,10 @@ from modules.model import Classifier
 from modules.preprocess import (ModelInputData, add_features,
                                 add_future_race_row, make_datamart)
 from modules.utils import load_config
-from ui import (get_round_grandprix_from_sidebar, plot_calendar, plot_circuit,
-                plot_first_pit_stop_timing, plot_pit_stop_count,
-                plot_pole_position_time, plot_probability_from_each_grid,
-                plot_winner_prediction, show_user_search_result)
+from ui import (get_round_grandprix_from_sidebar, plot_calendar,
+                create_first_pit_stop_timing_plot, create_pit_stop_count_plot,
+                create_pole_position_time_plot, create_probability_from_each_grid_plots,
+                create_winner_prediction_plot, show_user_search_result)
 
 load_dotenv()
 
@@ -38,14 +38,14 @@ def _cached_calendar() -> pd.DataFrame:
     return df
 
 
-@st.cache_data(ttl=60 * 60 * 24 * 7, show_spinner=True)
-def _cached_geodata(grandprix: str) -> np.array:
-    geo_json = load_geo_data(
-        bucket_name=BUCKET_NAME,
-        geo_file_name=DICT_CONFIG["gp_circuits"][grandprix],
-        s3_geo_data_key=DICT_CONFIG["s3_geo_data_key"],
-    )
-    return np.array(geo_json["features"][0]["geometry"]["coordinates"])
+# @st.cache_data(ttl=60 * 60 * 24 * 7, show_spinner=True)
+# def _cached_geodata(grandprix: str) -> np.array:
+#     geo_json = load_geo_data(
+#         bucket_name=BUCKET_NAME,
+#         geo_file_name=DICT_CONFIG["gp_circuits"][grandprix],
+#         s3_geo_data_key=DICT_CONFIG["s3_geo_data_key"],
+#     )
+#     return np.array(geo_json["features"][0]["geometry"]["coordinates"])
 
 
 @st.cache_data(ttl=60 * 60, show_spinner=True)
@@ -105,8 +105,6 @@ round_to_show, grandprix_to_show = get_round_grandprix_from_sidebar(
 
 # Show page title and circuit layout
 st.header(f"{SEASON} Round {round_to_show}: {grandprix_to_show} GrandPrix")
-array_geo = _cached_geodata(grandprix=grandprix_to_show)
-plot_circuit(array_geo=array_geo)
 
 # Show calendar
 plot_calendar(df_calendar=df_calendar)
@@ -117,19 +115,25 @@ db = _cached_inmemory_db()
 
 ## Pole time
 st.markdown("#### Pole position time")
-plot_pole_position_time(db=db, grandprix=grandprix_to_show)
+fig_pole = create_pole_position_time_plot(_db=db, grandprix=grandprix_to_show)
+st.pyplot(fig_pole)
 
 ## Winning probability from each grid
 st.markdown("#### Result Probabilities from each grid")
-plot_probability_from_each_grid(db=db, grandprix=grandprix_to_show)
+fig_win_prob, fig_pod_prob, fig_point_prob = create_probability_from_each_grid_plots(_db=db, grandprix=grandprix_to_show)
+st.pyplot(fig_win_prob)
+st.pyplot(fig_pod_prob)
+st.pyplot(fig_point_prob)
 
 ## Pit stop count proportion
 st.markdown("#### Pit stop count proportion")
-plot_pit_stop_count(db=db, grandprix=grandprix_to_show)
+fig_pit_count = create_pit_stop_count_plot(_db=db, grandprix=grandprix_to_show)
+st.pyplot(fig_pit_count)
 
 ## First pit stop timing
 st.markdown("#### First pit stop timing")
-plot_first_pit_stop_timing(db=db, grandprix=grandprix_to_show)
+fig_first_pit = create_first_pit_stop_timing_plot(_db=db, grandprix=grandprix_to_show)
+st.pyplot(fig_first_pit)
 
 # Show race prediction
 st.subheader("Winner Prediction")
@@ -138,11 +142,12 @@ classifier = _cached_classifier()
 df_winner_prediction_result = _cached_winner_prediction_result(
     model_input_data, classifier, SEASON, round_to_show
 )
-plot_winner_prediction(df_winner_prediction_result=df_winner_prediction_result)
+fig_pred = create_winner_prediction_plot(df_winner_prediction_result=df_winner_prediction_result)
+st.pyplot(fig_pred)
 
 ## Users search
 show_user_search_result(
-    db=db, list_result_type=list(DICT_CONFIG["s3_grandprix_result_data_key"].keys())
+    db=db, list_result_type=list(DICT_CONFIG["s3_grandprix_result_data_key"].keys()), grandprix=grandprix_to_show
 )
 
 if __name__ == "__main__":
