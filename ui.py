@@ -113,7 +113,7 @@ def create_pole_position_time_plot(_db: InmemoryDB, grandprix: str) -> Figure:
 
 
 @st.cache_resource(ttl=60 * 10)
-def create_q1_threshold(_db: InmemoryDB, grandprix: str) -> Figure:
+def create_q1_threshold_plot(_db: InmemoryDB, grandprix: str) -> Figure:
     """Create Q1 -> Q2 thredhold"""
     query = f"""
     SELECT season, q1_sec 
@@ -147,7 +147,7 @@ def create_q1_threshold(_db: InmemoryDB, grandprix: str) -> Figure:
 
 
 @st.cache_resource(ttl=60 * 10)
-def create_q2_threshold(_db: InmemoryDB, grandprix: str) -> Figure:
+def create_q2_threshold_plot(_db: InmemoryDB, grandprix: str) -> Figure:
     """Create Q2 -> Q3 threshold"""
     query = f"""
     SELECT season, q2_sec 
@@ -181,7 +181,7 @@ def create_q2_threshold(_db: InmemoryDB, grandprix: str) -> Figure:
 
 
 @st.cache_resource(ttl=60 * 10)
-def create_qualify_diff_1st_2nd(_db: InmemoryDB, grandprix: str) -> Figure:
+def create_qualify_diff_1st_2nd_plot(_db: InmemoryDB, grandprix: str) -> Figure:
     """Create time difference between pole sitter and 2nd"""
     query = f"""
         SELECT
@@ -220,6 +220,42 @@ def create_qualify_diff_1st_2nd(_db: InmemoryDB, grandprix: str) -> Figure:
     plt.tight_layout()
 
     return fig
+
+
+
+@st.cache_resource(ttl=60 * 10)
+def create_fastest_lap_plot(_db: InmemoryDB, grandprix: str) -> Figure:
+    """Create pole position time"""
+    query = f"""
+    SELECT season, time_sec 
+    FROM fastest_lap 
+    WHERE grandprix = '{grandprix}' 
+    AND position = 1
+    AND season >= 2014
+    """
+    df = _db.execute_query(query)
+
+    fig, ax = plt.subplots()
+    sns.lineplot(data=df, x="season", y="time_sec", marker="o", color="skyblue", ax=ax, linestyle="-")
+    ax.set_xlabel("Year", fontsize=14)
+    ax.set_ylabel("sec", fontsize=14)
+    ax.set_xticks(df["season"])
+    ax.set_xticklabels(df["season"], rotation=45)
+
+    # Annotate each point with the time value
+    for i, row in df.iterrows():
+        ax.annotate(
+            f"{row['time_sec']:.2f}",
+            (row["season"], row["time_sec"]),
+            textcoords="offset points",
+            xytext=(0, 10),
+            ha="center",
+        )
+
+    plt.tight_layout()
+
+    return fig
+
 
 
 @st.cache_resource(ttl=60 * 10)

@@ -20,9 +20,10 @@ from ui import (
     create_pole_position_time_plot,
     create_probability_from_each_grid_plots,
     create_winner_prediction_plot,
-    create_q1_threshold,
-    create_q2_threshold,
-    create_qualify_diff_1st_2nd,
+    create_q1_threshold_plot,
+    create_q2_threshold_plot,
+    create_qualify_diff_1st_2nd_plot,
+    create_fastest_lap_plot,
     get_round_grandprix_from_sidebar,
     plot_calendar,
     show_user_search_result,
@@ -121,19 +122,24 @@ st.pyplot(fig_pole)
 
 ## Q1 -> Q2 threshold
 st.markdown("#### Q1 -> Q2 threshold")
-fig_q1_thr = create_q1_threshold(_db=db, grandprix=grandprix_to_show)
+fig_q1_thr = create_q1_threshold_plot(_db=db, grandprix=grandprix_to_show)
 st.pyplot(fig_q1_thr)
 
 ## Q2 -> Q3 threshold
 st.markdown("#### Q2 -> Q3 threshold")
-fig_q2_thr = create_q2_threshold(_db=db, grandprix=grandprix_to_show)
+fig_q2_thr = create_q2_threshold_plot(_db=db, grandprix=grandprix_to_show)
 st.pyplot(fig_q2_thr)
 
 ## Q3 sec Difference between 1st and 2nd
 st.markdown("#### Difference between pole sitter and 2nd")
-fig_q_diff = create_qualify_diff_1st_2nd(_db=db, grandprix=grandprix_to_show)
+fig_q_diff = create_qualify_diff_1st_2nd_plot(_db=db, grandprix=grandprix_to_show)
 st.pyplot(fig_q_diff)
 
+
+## Fastest lap
+st.markdown("#### Fastest lap")
+fig_fastest_lap = create_fastest_lap_plot(_db=db, grandprix=grandprix_to_show)
+st.pyplot(fig_fastest_lap)
 
 ## Winning probability from each grid
 st.markdown("#### Result Probabilities from each grid")
