@@ -31,7 +31,7 @@ def get_round_grandprix_from_sidebar(df_calendar: pd.DataFrame) -> tuple[int, st
 
 
 def plot_calendar(df_calendar: pd.DataFrame) -> None:
-    """Plot grandprix race date calendar"""
+    """Create grandprix race date calendar"""
     with st.expander("Calendar"):
         for _, row in df_calendar.iterrows():
             str_expr = (
@@ -57,7 +57,7 @@ def plot_circuit(array_geo: np.array) -> Figure:
 
 @st.cache_resource(ttl=60 * 10)
 def create_winner_prediction_plot(df_winner_prediction_result: pd.DataFrame) -> Figure:
-    """Plot winner prediction figure
+    """Create winner prediction figure
     NOTE: This is adhoc function for design"""
     df_winner_prediction_result.rename(
         columns={"driver": "Driver", "y_pred": "Winning Probability"}, inplace=True
@@ -81,7 +81,7 @@ def create_winner_prediction_plot(df_winner_prediction_result: pd.DataFrame) -> 
 
 @st.cache_resource(ttl=60 * 10)
 def create_pole_position_time_plot(_db: InmemoryDB, grandprix: str) -> Figure:
-    """Plot pole position time"""
+    """Create pole position time"""
     query = f"""
     SELECT season, q3_sec 
     FROM qualifying 
@@ -91,8 +91,7 @@ def create_pole_position_time_plot(_db: InmemoryDB, grandprix: str) -> Figure:
     df = _db.execute_query(query)
 
     fig, ax = plt.subplots()
-    sns.lineplot(data=df, x="season", y="q3_sec", marker="o", color="skyblue", ax=ax)
-    ax = sns.lineplot(data=df, x="season", y="q3_sec", marker="o", color="skyblue")
+    sns.lineplot(data=df, x="season", y="q3_sec", marker="o", color="skyblue", ax=ax, linestyle="-")
     ax.set_xlabel("Year", fontsize=14)
     ax.set_ylabel("sec", fontsize=14)
     ax.set_xticks(df["season"])
@@ -114,8 +113,118 @@ def create_pole_position_time_plot(_db: InmemoryDB, grandprix: str) -> Figure:
 
 
 @st.cache_resource(ttl=60 * 10)
+def create_q1_threshold(_db: InmemoryDB, grandprix: str) -> Figure:
+    """Create Q1 -> Q2 thredhold"""
+    query = f"""
+    SELECT season, q1_sec 
+    FROM qualifying 
+    WHERE grandprix = '{grandprix}' 
+    AND position = 15
+    """
+    df = _db.execute_query(query)
+
+    fig, ax = plt.subplots()
+    sns.lineplot(data=df, x="season", y="q1_sec", marker="o", color="skyblue", ax=ax, linestyle="-")
+    ax.set_xlabel("Year", fontsize=14)
+    ax.set_ylabel("sec", fontsize=14)
+    ax.set_xticks(df["season"])
+    ax.set_xticklabels(df["season"], rotation=45)
+
+    # Annotate each point with the time value
+    for i, row in df.iterrows():
+        ax.annotate(
+            f"{row['q1_sec']:.2f}",
+            (row["season"], row["q1_sec"]),
+            textcoords="offset points",
+            xytext=(0, 10),
+            ha="center",
+        )
+
+    plt.tight_layout()
+
+    return fig
+
+
+
+@st.cache_resource(ttl=60 * 10)
+def create_q2_threshold(_db: InmemoryDB, grandprix: str) -> Figure:
+    """Create Q2 -> Q3 threshold"""
+    query = f"""
+    SELECT season, q2_sec 
+    FROM qualifying 
+    WHERE grandprix = '{grandprix}' 
+    AND position = 10
+    """
+    df = _db.execute_query(query)
+
+    fig, ax = plt.subplots()
+    sns.lineplot(data=df, x="season", y="q2_sec", marker="o", color="skyblue", ax=ax, linestyle="-")
+    ax.set_xlabel("Year", fontsize=14)
+    ax.set_ylabel("sec", fontsize=14)
+    ax.set_xticks(df["season"])
+    ax.set_xticklabels(df["season"], rotation=45)
+
+    # Annotate each point with the time value
+    for i, row in df.iterrows():
+        ax.annotate(
+            f"{row['q2_sec']:.2f}",
+            (row["season"], row["q2_sec"]),
+            textcoords="offset points",
+            xytext=(0, 10),
+            ha="center",
+        )
+
+    plt.tight_layout()
+
+    return fig
+
+
+
+@st.cache_resource(ttl=60 * 10)
+def create_qualify_diff_1st_2nd(_db: InmemoryDB, grandprix: str) -> Figure:
+    """Create time difference between pole sitter and 2nd"""
+    query = f"""
+        SELECT
+            q_1st.season,
+            q_1st.q3_sec AS q3_sec_1st,
+            q_2nd.q3_sec AS q3_sec_2nd,
+            q_2nd.q3_sec - q_1st.q3_sec AS diff_1st_2nd
+        FROM
+            qualifying q_1st
+        JOIN
+            qualifying q_2nd ON q_1st.season = q_2nd.season
+        WHERE
+            q_1st.grandprix = '{grandprix}'
+            AND q_2nd.grandprix = '{grandprix}'
+            AND q_1st.position = 1
+            AND q_2nd.position = 2
+    """
+    df = _db.execute_query(query)
+
+    fig, ax = plt.subplots()
+    sns.lineplot(data=df, x="season", y="diff_1st_2nd", color="skyblue", ax=ax, marker="o")
+    ax.set_xlabel("Year", fontsize=14)
+    ax.set_ylabel("sec", fontsize=14)
+    ax.set_xticks(df["season"])
+    ax.set_xticklabels(df["season"], rotation=45)
+
+    # Annotate each point with the time value
+    for i, row in df.iterrows():
+        ax.annotate(
+            f"{row['diff_1st_2nd']:.2f}",
+            (row["season"], row["diff_1st_2nd"]),
+            textcoords="offset points",
+            xytext=(0, 10),
+            ha="center",
+        )
+    plt.tight_layout()
+
+    return fig
+
+
+@st.cache_resource(ttl=60 * 10)
 def create_pit_stop_count_plot(_db: InmemoryDB, grandprix: str) -> Figure:
-    """Plot pit stop count proportion"""
+    """Create pit stop count proportion"""
     query = f"""
         SELECT
             driver,
@@ -157,7 +266,7 @@ def create_pit_stop_count_plot(_db: InmemoryDB, grandprix: str) -> Figure:
 
 @st.cache_resource(ttl=60 * 10)
 def create_first_pit_stop_timing_plot(_db: InmemoryDB, grandprix: str) -> Figure:
-    """Plot first pit stop timing"""
+    """Create first pit stop timing"""
     query = f"""
         SELECT
             driver,
@@ -191,7 +300,7 @@ def create_first_pit_stop_timing_plot(_db: InmemoryDB, grandprix: str) -> Figure
 def create_probability_from_each_grid_plots(
     _db: InmemoryDB, grandprix: str
 ) -> tuple[Figure, Figure, Figure]:
-    """Plot probability from each grid"""
+    """Create probability from each grid"""
     query = f"""
         SELECT
             grid.season,

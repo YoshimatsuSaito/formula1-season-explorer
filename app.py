@@ -1,11 +1,9 @@
 import os
 
-import numpy as np
 import pandas as pd
 import streamlit as st
 from dotenv import load_dotenv
 
-from modules.geo import load_geo_data
 from modules.inmemory_db import InmemoryDB
 from modules.load_csv_data import load_csv_data
 from modules.model import Classifier
@@ -22,6 +20,9 @@ from ui import (
     create_pole_position_time_plot,
     create_probability_from_each_grid_plots,
     create_winner_prediction_plot,
+    create_q1_threshold,
+    create_q2_threshold,
+    create_qualify_diff_1st_2nd,
     get_round_grandprix_from_sidebar,
     plot_calendar,
     show_user_search_result,
@@ -46,16 +47,6 @@ SEASON = DICT_CONFIG["season"]
 def _cached_calendar() -> pd.DataFrame:
     df = load_csv_data(bucket_name=BUCKET_NAME, key=f"calendar/{SEASON}.csv")
     return df
-
-
-# @st.cache_data(ttl=60 * 60 * 24 * 7, show_spinner=True)
-# def _cached_geodata(grandprix: str) -> np.array:
-#     geo_json = load_geo_data(
-#         bucket_name=BUCKET_NAME,
-#         geo_file_name=DICT_CONFIG["gp_circuits"][grandprix],
-#         s3_geo_data_key=DICT_CONFIG["s3_geo_data_key"],
-#     )
-#     return np.array(geo_json["features"][0]["geometry"]["coordinates"])
 
 
 @st.cache_data(ttl=60 * 60, show_spinner=True)
@@ -127,6 +118,22 @@ db = _cached_inmemory_db()
 st.markdown("#### Pole position time")
 fig_pole = create_pole_position_time_plot(_db=db, grandprix=grandprix_to_show)
 st.pyplot(fig_pole)
+
+## Q1 -> Q2 threshold
+st.markdown("#### Q1 -> Q2 threshold")
+fig_q1_thr = create_q1_threshold(_db=db, grandprix=grandprix_to_show)
+st.pyplot(fig_q1_thr)
+
+## Q2 -> Q3 threshold
+st.markdown("#### Q2 -> Q3 threshold")
+fig_q2_thr = create_q2_threshold(_db=db, grandprix=grandprix_to_show)
+st.pyplot(fig_q2_thr)
+
+## Q3 sec Difference between 1st and 2nd
+st.markdown("#### Difference between pole sitter and 2nd")
+fig_q_diff = create_qualify_diff_1st_2nd(_db=db, grandprix=grandprix_to_show)
+st.pyplot(fig_q_diff)
+
 
 ## Winning probability from each grid
 st.markdown("#### Result Probabilities from each grid")
