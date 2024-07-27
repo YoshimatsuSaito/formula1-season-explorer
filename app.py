@@ -24,6 +24,7 @@ from ui import (
     create_q2_threshold_plot,
     create_qualify_diff_1st_2nd_plot,
     create_fastest_lap_plot,
+    create_fastest_lap_timing_plot,
     get_round_grandprix_from_sidebar,
     plot_calendar,
     show_user_search_result,
@@ -140,6 +141,11 @@ st.pyplot(fig_q_diff)
 st.markdown("#### Fastest lap")
 fig_fastest_lap = create_fastest_lap_plot(_db=db, grandprix=grandprix_to_show)
 st.pyplot(fig_fastest_lap)
+
+## Fastest lap timing
+st.markdown("#### Fastest lap timing (after 10 laps)")
+fig_fastest_lap_timing = create_fastest_lap_timing_plot(_db=db, grandprix=grandprix_to_show)
+st.pyplot(fig_fastest_lap_timing)
 
 ## Winning probability from each grid
 st.markdown("#### Result Probabilities from each grid")

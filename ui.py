@@ -257,6 +257,33 @@ def create_fastest_lap_plot(_db: InmemoryDB, grandprix: str) -> Figure:
     return fig
 
 
+@st.cache_resource(ttl=60 * 10)
+def create_fastest_lap_timing_plot(_db: InmemoryDB, grandprix: str) -> Figure:
+    """Create pole position time"""
+    query = f"""
+        SELECT 
+            lap
+        FROM 
+            fastest_lap 
+        WHERE 
+            grandprix = '{grandprix}' 
+            AND 
+            season >= 2014
+            AND
+            lap >= 10
+    """
+    df = _db.execute_query(query)
+
+    fig, ax = plt.subplots()
+    sns.histplot(data=df, x="lap", color="skyblue", ax=ax, bins=40)
+    ax.set_xlabel("Lap", fontsize=14)
+    ax.set_ylabel("frequency", fontsize=14)
+
+    plt.tight_layout()
+
+    return fig
+
+
 
 @st.cache_resource(ttl=60 * 10)
 def create_pit_stop_count_plot(_db: InmemoryDB, grandprix: str) -> Figure:
