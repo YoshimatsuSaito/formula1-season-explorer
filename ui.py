@@ -224,7 +224,7 @@ def create_qualify_diff_1st_2nd_plot(_db: InmemoryDB, grandprix: str) -> Figure:
 
 @st.cache_resource(ttl=60 * 10)
 def create_fastest_lap_plot(_db: InmemoryDB, grandprix: str) -> Figure:
-    """Create pole position time"""
+    """Create fastest lap trajectry"""
     query = f"""
     SELECT season, time_sec 
     FROM fastest_lap 
@@ -265,7 +265,7 @@ def create_fastest_lap_plot(_db: InmemoryDB, grandprix: str) -> Figure:
 
 @st.cache_resource(ttl=60 * 10)
 def create_fastest_lap_timing_plot(_db: InmemoryDB, grandprix: str) -> Figure:
-    """Create pole position time"""
+    """Create fastest lap timing plot"""
     query = f"""
         SELECT 
             lap
@@ -292,7 +292,7 @@ def create_fastest_lap_timing_plot(_db: InmemoryDB, grandprix: str) -> Figure:
 def create_diff_fastest_lap_and_pole_time_plot(
     _db: InmemoryDB, grandprix: str, ser_grandprix_this_season: pd.Series
 ) -> Figure:
-    """Create pole position time"""
+    """Create difference between fastest lap and pole time"""
 
     query = f"""
         SELECT
@@ -516,7 +516,7 @@ def create_probability_from_each_grid_plots(
 def create_completion_ratio_plot(
     _db: InmemoryDB, grandprix: str, ser_grandprix_this_season: pd.Series
 ) -> Figure:
-    """Create pole position time"""
+    """Create completion ratio time"""
 
     def completion_ratio(group) -> float:
         """Completion ratio for each group"""
@@ -557,6 +557,46 @@ def create_completion_ratio_plot(
 
     return fig
 
+@st.cache_resource(ttl=60 * 10)
+def create_race_time_plot(_db: InmemoryDB, grandprix: str) -> Figure:
+    """Create race time plot"""
+    query = f"""
+    SELECT season, time_sec 
+    FROM race_result 
+    WHERE grandprix = '{grandprix}' 
+    AND position = 1
+    """
+    df = _db.execute_query(query)
+    df["time_minutes"] = df["time_sec"] / 60
+
+    fig, ax = plt.subplots()
+    sns.lineplot(
+        data=df,
+        x="season",
+        y="time_minutes",
+        marker="o",
+        color="skyblue",
+        ax=ax,
+        linestyle="-",
+    )
+    ax.set_xlabel("Year", fontsize=14)
+    ax.set_ylabel("minutes", fontsize=14)
+    ax.set_xticks(df["season"])
+    ax.set_xticklabels(df["season"], rotation=45)
+
+    # Annotate each point with the time value
+    for i, row in df.iterrows():
+        ax.annotate(
+            f"{row['time_minutes']:.2f}",
+            (row["season"], row["time_minutes"]),
+            textcoords="offset points",
+            xytext=(0, 10),
+            ha="center",
+        )
+
+    plt.tight_layout()
+
+    return fig
 
 @st.cache_resource(ttl=60 * 10)
 def create_winner_prediction_plot(df_winner_prediction_result: pd.DataFrame) -> Figure:

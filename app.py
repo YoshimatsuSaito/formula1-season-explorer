@@ -19,6 +19,7 @@ from ui import (create_diff_fastest_lap_and_pole_time_plot,
                 create_qualify_diff_1st_2nd_plot,
                 create_winner_prediction_plot,
                 create_completion_ratio_plot,
+                create_race_time_plot,
                 get_round_grandprix_from_sidebar, plot_calendar,
                 show_user_search_result)
 
@@ -156,6 +157,11 @@ with st.expander("Race"):
         _db=db, grandprix=grandprix_to_show, ser_grandprix_this_season=df_calendar["grandprix"]
     )
     st.pyplot(fig_completion_ratio)
+
+    ### Race time
+    st.markdown("#### Race time")
+    fig_race_time = create_race_time_plot(_db=db, grandprix=grandprix_to_show)
+    st.pyplot(fig_race_time)
 
 with st.expander("Grid"):
     ## Winning probability from each grid
