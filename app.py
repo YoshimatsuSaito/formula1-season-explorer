@@ -107,8 +107,7 @@ plot_calendar(df_calendar=df_calendar)
 st.subheader(f"Stats of {grandprix_to_show} GrandPrix")
 db = _cached_inmemory_db()
 
-st.markdown("### Qualify")
-with st.expander("Show stats"):
+with st.expander("Qualify"):
     ## Pole position time
     st.markdown("#### Pole position time")
     fig_pole = create_pole_position_time_plot(_db=db, grandprix=grandprix_to_show)
@@ -129,8 +128,7 @@ with st.expander("Show stats"):
     fig_q_diff = create_qualify_diff_1st_2nd_plot(_db=db, grandprix=grandprix_to_show)
     st.pyplot(fig_q_diff)
 
-st.markdown("### Fastest lap")
-with st.expander("Show stats"):
+with st.expander("Fastest lap"):
     ## Fastest lap
     st.markdown("#### Fastest lap")
     fig_fastest_lap = create_fastest_lap_plot(_db=db, grandprix=grandprix_to_show)
@@ -150,8 +148,7 @@ with st.expander("Show stats"):
     )
     st.pyplot(fig_diff_fastest_pole)
 
-st.markdown("### Grid")
-with st.expander("Show stats"):
+with st.expander("Grid"):
     ## Winning probability from each grid
     st.markdown("#### Result Probabilities from each grid")
     fig_win_prob, fig_pod_prob, fig_point_prob = (
@@ -161,8 +158,7 @@ with st.expander("Show stats"):
     st.pyplot(fig_pod_prob)
     st.pyplot(fig_point_prob)
 
-st.markdown("### Pit stop")
-with st.expander("Show stats"):
+with st.expander("Pit stop"):
     ## Pit stop count proportion
     st.markdown("#### Pit stop count proportion")
     fig_pit_count = create_pit_stop_count_plot(_db=db, grandprix=grandprix_to_show)
@@ -175,8 +171,8 @@ with st.expander("Show stats"):
     )
     st.pyplot(fig_first_pit)
 
-st.markdown("### Winner Prediction")
-with st.expander("Show prediction"):
+st.markdown("### Winner prediction")
+with st.expander("Winner Prediction"):
     # Show race prediction
     model_input_data = _cached_make_model_input_data(df_calendar=df_calendar)
     classifier = _cached_classifier()
