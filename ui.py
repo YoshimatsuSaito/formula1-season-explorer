@@ -557,6 +557,7 @@ def create_completion_ratio_plot(
 
     return fig
 
+
 @st.cache_resource(ttl=60 * 10)
 def create_race_time_plot(_db: InmemoryDB, grandprix: str) -> Figure:
     """Create race time plot"""
@@ -597,6 +598,7 @@ def create_race_time_plot(_db: InmemoryDB, grandprix: str) -> Figure:
     plt.tight_layout()
 
     return fig
+
 
 @st.cache_resource(ttl=60 * 10)
 def create_winner_prediction_plot(df_winner_prediction_result: pd.DataFrame) -> Figure:

@@ -10,16 +10,15 @@ from modules.model import Classifier
 from modules.preprocess import (ModelInputData, add_features,
                                 add_future_race_row, make_datamart)
 from modules.utils import load_config
-from ui import (create_diff_fastest_lap_and_pole_time_plot,
+from ui import (create_completion_ratio_plot,
+                create_diff_fastest_lap_and_pole_time_plot,
                 create_fastest_lap_plot, create_fastest_lap_timing_plot,
                 create_first_pit_stop_timing_plot, create_pit_stop_count_plot,
                 create_pole_position_time_plot,
                 create_probability_from_each_grid_plots,
                 create_q1_threshold_plot, create_q2_threshold_plot,
-                create_qualify_diff_1st_2nd_plot,
+                create_qualify_diff_1st_2nd_plot, create_race_time_plot,
                 create_winner_prediction_plot,
-                create_completion_ratio_plot,
-                create_race_time_plot,
                 get_round_grandprix_from_sidebar, plot_calendar,
                 show_user_search_result)
 
@@ -146,7 +145,9 @@ with st.expander("Fastest lap"):
     ## Fastest lap / Pole position
     st.markdown("#### Fastest lap / Pole position")
     fig_diff_fastest_pole = create_diff_fastest_lap_and_pole_time_plot(
-        _db=db, grandprix=grandprix_to_show, ser_grandprix_this_season=df_calendar["grandprix"],
+        _db=db,
+        grandprix=grandprix_to_show,
+        ser_grandprix_this_season=df_calendar["grandprix"],
     )
     st.pyplot(fig_diff_fastest_pole)
 
@@ -154,7 +155,9 @@ with st.expander("Race"):
     ### Completion ratio
     st.markdown("#### Completion ratio")
     fig_completion_ratio = create_completion_ratio_plot(
-        _db=db, grandprix=grandprix_to_show, ser_grandprix_this_season=df_calendar["grandprix"]
+        _db=db,
+        grandprix=grandprix_to_show,
+        ser_grandprix_this_season=df_calendar["grandprix"],
     )
     st.pyplot(fig_completion_ratio)
 
