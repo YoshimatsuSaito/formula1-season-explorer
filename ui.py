@@ -56,30 +56,6 @@ def plot_circuit(array_geo: np.array) -> Figure:
 
 
 @st.cache_resource(ttl=60 * 10)
-def create_winner_prediction_plot(df_winner_prediction_result: pd.DataFrame) -> Figure:
-    """Create winner prediction figure
-    NOTE: This is adhoc function for design"""
-    df_winner_prediction_result.rename(
-        columns={"driver": "Driver", "y_pred": "Winning Probability"}, inplace=True
-    )
-    df_winner_prediction_result["Driver"] = df_winner_prediction_result["Driver"].apply(
-        lambda x: x.split("_")[1].upper() if len(x.split("_")) > 1 else x.upper()
-    )
-    fig, ax = plt.subplots()
-    sns.barplot(
-        y="Driver",
-        x="Winning Probability",
-        data=df_winner_prediction_result,
-        orient="h",
-        ax=ax,
-        color="skyblue",
-    )
-    ax.set_ylabel("")
-    ax.set_xlim(0, 1)
-    return fig
-
-
-@st.cache_resource(ttl=60 * 10)
 def create_pole_position_time_plot(_db: InmemoryDB, grandprix: str) -> Figure:
     """Create pole position time"""
     query = f"""
@@ -91,7 +67,15 @@ def create_pole_position_time_plot(_db: InmemoryDB, grandprix: str) -> Figure:
     df = _db.execute_query(query)
 
     fig, ax = plt.subplots()
-    sns.lineplot(data=df, x="season", y="q3_sec", marker="o", color="skyblue", ax=ax, linestyle="-")
+    sns.lineplot(
+        data=df,
+        x="season",
+        y="q3_sec",
+        marker="o",
+        color="skyblue",
+        ax=ax,
+        linestyle="-",
+    )
     ax.set_xlabel("Year", fontsize=14)
     ax.set_ylabel("sec", fontsize=14)
     ax.set_xticks(df["season"])
@@ -124,7 +108,15 @@ def create_q1_threshold_plot(_db: InmemoryDB, grandprix: str) -> Figure:
     df = _db.execute_query(query)
 
     fig, ax = plt.subplots()
-    sns.lineplot(data=df, x="season", y="q1_sec", marker="o", color="skyblue", ax=ax, linestyle="-")
+    sns.lineplot(
+        data=df,
+        x="season",
+        y="q1_sec",
+        marker="o",
+        color="skyblue",
+        ax=ax,
+        linestyle="-",
+    )
     ax.set_xlabel("Year", fontsize=14)
     ax.set_ylabel("sec", fontsize=14)
     ax.set_xticks(df["season"])
@@ -145,7 +137,6 @@ def create_q1_threshold_plot(_db: InmemoryDB, grandprix: str) -> Figure:
     return fig
 
 
-
 @st.cache_resource(ttl=60 * 10)
 def create_q2_threshold_plot(_db: InmemoryDB, grandprix: str) -> Figure:
     """Create Q2 -> Q3 threshold"""
@@ -158,7 +149,15 @@ def create_q2_threshold_plot(_db: InmemoryDB, grandprix: str) -> Figure:
     df = _db.execute_query(query)
 
     fig, ax = plt.subplots()
-    sns.lineplot(data=df, x="season", y="q2_sec", marker="o", color="skyblue", ax=ax, linestyle="-")
+    sns.lineplot(
+        data=df,
+        x="season",
+        y="q2_sec",
+        marker="o",
+        color="skyblue",
+        ax=ax,
+        linestyle="-",
+    )
     ax.set_xlabel("Year", fontsize=14)
     ax.set_ylabel("sec", fontsize=14)
     ax.set_xticks(df["season"])
@@ -177,7 +176,6 @@ def create_q2_threshold_plot(_db: InmemoryDB, grandprix: str) -> Figure:
     plt.tight_layout()
 
     return fig
-
 
 
 @st.cache_resource(ttl=60 * 10)
@@ -202,7 +200,9 @@ def create_qualify_diff_1st_2nd_plot(_db: InmemoryDB, grandprix: str) -> Figure:
     df = _db.execute_query(query)
 
     fig, ax = plt.subplots()
-    sns.lineplot(data=df, x="season", y="diff_1st_2nd", color="skyblue", ax=ax, marker="o")
+    sns.lineplot(
+        data=df, x="season", y="diff_1st_2nd", color="skyblue", ax=ax, marker="o"
+    )
     ax.set_xlabel("Year", fontsize=14)
     ax.set_ylabel("sec", fontsize=14)
     ax.set_xticks(df["season"])
@@ -222,7 +222,6 @@ def create_qualify_diff_1st_2nd_plot(_db: InmemoryDB, grandprix: str) -> Figure:
     return fig
 
 
-
 @st.cache_resource(ttl=60 * 10)
 def create_fastest_lap_plot(_db: InmemoryDB, grandprix: str) -> Figure:
     """Create pole position time"""
@@ -231,12 +230,19 @@ def create_fastest_lap_plot(_db: InmemoryDB, grandprix: str) -> Figure:
     FROM fastest_lap 
     WHERE grandprix = '{grandprix}' 
     AND position = 1
-    AND season >= 2014
     """
     df = _db.execute_query(query)
 
     fig, ax = plt.subplots()
-    sns.lineplot(data=df, x="season", y="time_sec", marker="o", color="skyblue", ax=ax, linestyle="-")
+    sns.lineplot(
+        data=df,
+        x="season",
+        y="time_sec",
+        marker="o",
+        color="skyblue",
+        ax=ax,
+        linestyle="-",
+    )
     ax.set_xlabel("Year", fontsize=14)
     ax.set_ylabel("sec", fontsize=14)
     ax.set_xticks(df["season"])
@@ -267,8 +273,6 @@ def create_fastest_lap_timing_plot(_db: InmemoryDB, grandprix: str) -> Figure:
             fastest_lap 
         WHERE 
             grandprix = '{grandprix}' 
-            AND 
-            season >= 2014
             AND
             lap >= 10
     """
@@ -283,6 +287,53 @@ def create_fastest_lap_timing_plot(_db: InmemoryDB, grandprix: str) -> Figure:
 
     return fig
 
+
+@st.cache_resource(ttl=60 * 10)
+def create_diff_fastest_lap_and_pole_time_plot(
+    _db: InmemoryDB, grandprix: str
+) -> Figure:
+    """Create pole position time"""
+    query = f"""
+        SELECT
+            q.season,
+            q.grandprix,
+            q.q3_sec AS q3_fastest,
+            f.time_sec AS race_fastest,
+            ((f.time_sec - q.q3_sec) / q.q3_sec) * 100 AS time_diff_percent
+        FROM
+            qualifying q
+        JOIN
+            fastest_lap f 
+        ON 
+            q.season = f.season 
+            AND 
+            q.grandprix = f.grandprix
+        WHERE
+            q.position = 1
+            AND 
+            f.position = 1
+    """
+    df = _db.execute_query(query)
+    df = pd.DataFrame(
+        df.groupby("grandprix")["time_diff_percent"].median()
+    ).reset_index()
+    df.sort_values(by="time_diff_percent", ascending=False, inplace=True)
+    colors = ["red" if gp == grandprix else "skyblue" for gp in df["grandprix"]]
+    fig, ax = plt.subplots()
+    sns.barplot(
+        y="grandprix",
+        x="time_diff_percent",
+        data=df,
+        orient="h",
+        ax=ax,
+        palette=colors,
+    )
+    ax.set_xlabel("Time difference (%): fastest lap / pole position time")
+    ax.set_ylabel("Grandprix")
+
+    plt.tight_layout()
+
+    return fig
 
 
 @st.cache_resource(ttl=60 * 10)
@@ -457,6 +508,30 @@ def create_probability_from_each_grid_plots(
     plt.tight_layout()
 
     return fig1, fig2, fig3
+
+
+@st.cache_resource(ttl=60 * 10)
+def create_winner_prediction_plot(df_winner_prediction_result: pd.DataFrame) -> Figure:
+    """Create winner prediction figure
+    NOTE: This is adhoc function for design"""
+    df_winner_prediction_result.rename(
+        columns={"driver": "Driver", "y_pred": "Winning Probability"}, inplace=True
+    )
+    df_winner_prediction_result["Driver"] = df_winner_prediction_result["Driver"].apply(
+        lambda x: x.split("_")[1].upper() if len(x.split("_")) > 1 else x.upper()
+    )
+    fig, ax = plt.subplots()
+    sns.barplot(
+        y="Driver",
+        x="Winning Probability",
+        data=df_winner_prediction_result,
+        orient="h",
+        ax=ax,
+        color="skyblue",
+    )
+    ax.set_ylabel("")
+    ax.set_xlim(0, 1)
+    return fig
 
 
 def show_user_search_result(

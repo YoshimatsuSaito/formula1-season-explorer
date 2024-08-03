@@ -7,28 +7,19 @@ from dotenv import load_dotenv
 from modules.inmemory_db import InmemoryDB
 from modules.load_csv_data import load_csv_data
 from modules.model import Classifier
-from modules.preprocess import (
-    ModelInputData,
-    add_features,
-    add_future_race_row,
-    make_datamart,
-)
+from modules.preprocess import (ModelInputData, add_features,
+                                add_future_race_row, make_datamart)
 from modules.utils import load_config
-from ui import (
-    create_first_pit_stop_timing_plot,
-    create_pit_stop_count_plot,
-    create_pole_position_time_plot,
-    create_probability_from_each_grid_plots,
-    create_winner_prediction_plot,
-    create_q1_threshold_plot,
-    create_q2_threshold_plot,
-    create_qualify_diff_1st_2nd_plot,
-    create_fastest_lap_plot,
-    create_fastest_lap_timing_plot,
-    get_round_grandprix_from_sidebar,
-    plot_calendar,
-    show_user_search_result,
-)
+from ui import (create_diff_fastest_lap_and_pole_time_plot,
+                create_fastest_lap_plot, create_fastest_lap_timing_plot,
+                create_first_pit_stop_timing_plot, create_pit_stop_count_plot,
+                create_pole_position_time_plot,
+                create_probability_from_each_grid_plots,
+                create_q1_threshold_plot, create_q2_threshold_plot,
+                create_qualify_diff_1st_2nd_plot,
+                create_winner_prediction_plot,
+                get_round_grandprix_from_sidebar, plot_calendar,
+                show_user_search_result)
 
 load_dotenv()
 
@@ -113,71 +104,91 @@ st.header(f"{SEASON} Round {round_to_show}: {grandprix_to_show} GrandPrix")
 plot_calendar(df_calendar=df_calendar)
 
 # Show past result
-st.subheader(f"Analysis of {grandprix_to_show} GrandPrix")
+st.subheader(f"Stats of {grandprix_to_show} GrandPrix")
 db = _cached_inmemory_db()
 
-## Pole time
-st.markdown("#### Pole position time")
-fig_pole = create_pole_position_time_plot(_db=db, grandprix=grandprix_to_show)
-st.pyplot(fig_pole)
+st.markdown("### Qualify")
+with st.expander("Show stats"):
+    ## Pole position time
+    st.markdown("#### Pole position time")
+    fig_pole = create_pole_position_time_plot(_db=db, grandprix=grandprix_to_show)
+    st.pyplot(fig_pole)
 
-## Q1 -> Q2 threshold
-st.markdown("#### Q1 -> Q2 threshold")
-fig_q1_thr = create_q1_threshold_plot(_db=db, grandprix=grandprix_to_show)
-st.pyplot(fig_q1_thr)
+    ## Q1 -> Q2 threshold
+    st.markdown("#### Q1 -> Q2 threshold")
+    fig_q1_thr = create_q1_threshold_plot(_db=db, grandprix=grandprix_to_show)
+    st.pyplot(fig_q1_thr)
 
-## Q2 -> Q3 threshold
-st.markdown("#### Q2 -> Q3 threshold")
-fig_q2_thr = create_q2_threshold_plot(_db=db, grandprix=grandprix_to_show)
-st.pyplot(fig_q2_thr)
+    ## Q2 -> Q3 threshold
+    st.markdown("#### Q2 -> Q3 threshold")
+    fig_q2_thr = create_q2_threshold_plot(_db=db, grandprix=grandprix_to_show)
+    st.pyplot(fig_q2_thr)
 
-## Q3 sec Difference between 1st and 2nd
-st.markdown("#### Difference between pole sitter and 2nd")
-fig_q_diff = create_qualify_diff_1st_2nd_plot(_db=db, grandprix=grandprix_to_show)
-st.pyplot(fig_q_diff)
+    ## Q3 sec Difference between 1st and 2nd
+    st.markdown("#### Difference between pole sitter and 2nd")
+    fig_q_diff = create_qualify_diff_1st_2nd_plot(_db=db, grandprix=grandprix_to_show)
+    st.pyplot(fig_q_diff)
 
+st.markdown("### Fastest lap")
+with st.expander("Show stats"):
+    ## Fastest lap
+    st.markdown("#### Fastest lap")
+    fig_fastest_lap = create_fastest_lap_plot(_db=db, grandprix=grandprix_to_show)
+    st.pyplot(fig_fastest_lap)
 
-## Fastest lap
-st.markdown("#### Fastest lap")
-fig_fastest_lap = create_fastest_lap_plot(_db=db, grandprix=grandprix_to_show)
-st.pyplot(fig_fastest_lap)
+    ## Fastest lap timing
+    st.markdown("#### Fastest lap timing (after 10 laps)")
+    fig_fastest_lap_timing = create_fastest_lap_timing_plot(
+        _db=db, grandprix=grandprix_to_show
+    )
+    st.pyplot(fig_fastest_lap_timing)
 
-## Fastest lap timing
-st.markdown("#### Fastest lap timing (after 10 laps)")
-fig_fastest_lap_timing = create_fastest_lap_timing_plot(_db=db, grandprix=grandprix_to_show)
-st.pyplot(fig_fastest_lap_timing)
+    ## Fastest lap / Pole position
+    st.markdown("#### Fastest lap / Pole position")
+    fig_diff_fastest_pole = create_diff_fastest_lap_and_pole_time_plot(
+        _db=db, grandprix=grandprix_to_show
+    )
+    st.pyplot(fig_diff_fastest_pole)
 
-## Winning probability from each grid
-st.markdown("#### Result Probabilities from each grid")
-fig_win_prob, fig_pod_prob, fig_point_prob = create_probability_from_each_grid_plots(
-    _db=db, grandprix=grandprix_to_show
-)
-st.pyplot(fig_win_prob)
-st.pyplot(fig_pod_prob)
-st.pyplot(fig_point_prob)
+st.markdown("### Grid")
+with st.expander("Show stats"):
+    ## Winning probability from each grid
+    st.markdown("#### Result Probabilities from each grid")
+    fig_win_prob, fig_pod_prob, fig_point_prob = (
+        create_probability_from_each_grid_plots(_db=db, grandprix=grandprix_to_show)
+    )
+    st.pyplot(fig_win_prob)
+    st.pyplot(fig_pod_prob)
+    st.pyplot(fig_point_prob)
 
-## Pit stop count proportion
-st.markdown("#### Pit stop count proportion")
-fig_pit_count = create_pit_stop_count_plot(_db=db, grandprix=grandprix_to_show)
-st.pyplot(fig_pit_count)
+st.markdown("### Pit stop")
+with st.expander("Show stats"):
+    ## Pit stop count proportion
+    st.markdown("#### Pit stop count proportion")
+    fig_pit_count = create_pit_stop_count_plot(_db=db, grandprix=grandprix_to_show)
+    st.pyplot(fig_pit_count)
 
-## First pit stop timing
-st.markdown("#### First pit stop timing")
-fig_first_pit = create_first_pit_stop_timing_plot(_db=db, grandprix=grandprix_to_show)
-st.pyplot(fig_first_pit)
+    ## First pit stop timing
+    st.markdown("#### First pit stop timing")
+    fig_first_pit = create_first_pit_stop_timing_plot(
+        _db=db, grandprix=grandprix_to_show
+    )
+    st.pyplot(fig_first_pit)
 
-# Show race prediction
-st.subheader("Winner Prediction")
-model_input_data = _cached_make_model_input_data(df_calendar=df_calendar)
-classifier = _cached_classifier()
-df_winner_prediction_result = _cached_winner_prediction_result(
-    model_input_data, classifier, SEASON, round_to_show
-)
-fig_pred = create_winner_prediction_plot(
-    df_winner_prediction_result=df_winner_prediction_result
-)
-st.pyplot(fig_pred)
+st.markdown("### Winner Prediction")
+with st.expander("Show prediction"):
+    # Show race prediction
+    model_input_data = _cached_make_model_input_data(df_calendar=df_calendar)
+    classifier = _cached_classifier()
+    df_winner_prediction_result = _cached_winner_prediction_result(
+        model_input_data, classifier, SEASON, round_to_show
+    )
+    fig_pred = create_winner_prediction_plot(
+        df_winner_prediction_result=df_winner_prediction_result
+    )
+    st.pyplot(fig_pred)
 
+st.markdown("### Search stats")
 ## Users search
 show_user_search_result(
     db=db,
