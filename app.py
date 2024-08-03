@@ -18,6 +18,7 @@ from ui import (create_diff_fastest_lap_and_pole_time_plot,
                 create_q1_threshold_plot, create_q2_threshold_plot,
                 create_qualify_diff_1st_2nd_plot,
                 create_winner_prediction_plot,
+                create_completion_ratio_plot,
                 get_round_grandprix_from_sidebar, plot_calendar,
                 show_user_search_result)
 
@@ -144,9 +145,17 @@ with st.expander("Fastest lap"):
     ## Fastest lap / Pole position
     st.markdown("#### Fastest lap / Pole position")
     fig_diff_fastest_pole = create_diff_fastest_lap_and_pole_time_plot(
-        _db=db, grandprix=grandprix_to_show
+        _db=db, grandprix=grandprix_to_show, ser_grandprix_this_season=df_calendar["grandprix"],
     )
     st.pyplot(fig_diff_fastest_pole)
+
+with st.expander("Race"):
+    ### Completion ratio
+    st.markdown("#### Completion ratio")
+    fig_completion_ratio = create_completion_ratio_plot(
+        _db=db, grandprix=grandprix_to_show, ser_grandprix_this_season=df_calendar["grandprix"]
+    )
+    st.pyplot(fig_completion_ratio)
 
 with st.expander("Grid"):
     ## Winning probability from each grid

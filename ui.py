@@ -290,9 +290,10 @@ def create_fastest_lap_timing_plot(_db: InmemoryDB, grandprix: str) -> Figure:
 
 @st.cache_resource(ttl=60 * 10)
 def create_diff_fastest_lap_and_pole_time_plot(
-    _db: InmemoryDB, grandprix: str
+    _db: InmemoryDB, grandprix: str, ser_grandprix_this_season: pd.Series
 ) -> Figure:
     """Create pole position time"""
+
     query = f"""
         SELECT
             q.season,
@@ -314,6 +315,7 @@ def create_diff_fastest_lap_and_pole_time_plot(
             f.position = 1
     """
     df = _db.execute_query(query)
+    df = df.loc[df["grandprix"].isin(ser_grandprix_this_season)]
     df = pd.DataFrame(
         df.groupby("grandprix")["time_diff_percent"].median()
     ).reset_index()
@@ -508,6 +510,52 @@ def create_probability_from_each_grid_plots(
     plt.tight_layout()
 
     return fig1, fig2, fig3
+
+
+@st.cache_resource(ttl=60 * 10)
+def create_completion_ratio_plot(
+    _db: InmemoryDB, grandprix: str, ser_grandprix_this_season: pd.Series
+) -> Figure:
+    """Create pole position time"""
+
+    def completion_ratio(group) -> float:
+        """Completion ratio for each group"""
+        total_count = len(group)
+        none_count = group.isnull().sum()
+        return (total_count - none_count) / total_count
+
+    # Detect completion ratio by position columns (None means DNF etc)
+    query = f"""
+        SELECT
+            season,
+            grandprix,
+            position
+        FROM
+            race_result
+    """
+    df = _db.execute_query(query)
+    df = df.loc[df["grandprix"].isin(ser_grandprix_this_season)]
+    df = pd.DataFrame(
+        df.groupby(["grandprix", "season"])["position"].apply(completion_ratio)
+    ).reset_index()
+    df = pd.DataFrame(df.groupby("grandprix")["position"].mean()).reset_index()
+    df.sort_values(by="position", ascending=False, inplace=True)
+    colors = ["red" if gp == grandprix else "skyblue" for gp in df["grandprix"]]
+    fig, ax = plt.subplots()
+    sns.barplot(
+        y="grandprix",
+        x="position",
+        data=df,
+        orient="h",
+        ax=ax,
+        palette=colors,
+    )
+    ax.set_xlabel("Completion ratio")
+    ax.set_ylabel("Grandprix")
+
+    plt.tight_layout()
+
+    return fig
 
 
 @st.cache_resource(ttl=60 * 10)
