@@ -101,13 +101,13 @@ round_to_show, grandprix_to_show = get_round_grandprix_from_sidebar(
 )
 
 # Show page title and circuit layout
-st.header(f"{SEASON} Round {round_to_show}: {grandprix_to_show} GrandPrix")
+st.header(f"{SEASON} Round {round_to_show}: {grandprix_to_show}")
 
 # Show calendar
 plot_calendar(df_calendar=df_calendar)
 
 # Show stats
-st.subheader(f"Stats of {grandprix_to_show} GrandPrix")
+st.subheader(f"Stats of the GrandPrix")
 db = _cached_inmemory_db()
 
 with st.expander("Qualify"):
@@ -131,6 +131,46 @@ with st.expander("Qualify"):
     fig_q_diff = create_qualify_diff_1st_2nd_plot(_db=db, grandprix=grandprix_to_show)
     st.pyplot(fig_q_diff)
 
+
+with st.expander("Grid"):
+    ## Winning probability from each grid
+    st.markdown("#### Result Probabilities from each grid")
+    fig_win_prob, fig_pod_prob, fig_point_prob = (
+        create_probability_from_each_grid_plots(_db=db, grandprix=grandprix_to_show)
+    )
+    st.pyplot(fig_win_prob)
+    st.pyplot(fig_pod_prob)
+    st.pyplot(fig_point_prob)
+
+
+with st.expander("Race"):
+    ### Completion ratio
+    st.markdown("#### Completion ratio")
+    fig_completion_ratio = create_completion_ratio_plot(
+        _db=db,
+        grandprix=grandprix_to_show,
+        ser_grandprix_this_season=df_calendar["grandprix"],
+    )
+    st.pyplot(fig_completion_ratio)
+
+    ### Race time
+    st.markdown("#### Race time")
+    fig_race_time = create_race_time_plot(_db=db, grandprix=grandprix_to_show)
+    st.pyplot(fig_race_time)
+
+with st.expander("Pit stop"):
+    ## Pit stop count proportion
+    st.markdown("#### Pit stop count proportion")
+    fig_pit_count = create_pit_stop_count_plot(_db=db, grandprix=grandprix_to_show)
+    st.pyplot(fig_pit_count)
+
+    ## First pit stop timing
+    st.markdown("#### First pit stop timing")
+    fig_first_pit = create_first_pit_stop_timing_plot(
+        _db=db, grandprix=grandprix_to_show
+    )
+    st.pyplot(fig_first_pit)
+
 with st.expander("Fastest lap"):
     ## Fastest lap
     st.markdown("#### Fastest lap")
@@ -153,58 +193,23 @@ with st.expander("Fastest lap"):
     )
     st.pyplot(fig_diff_fastest_pole)
 
-with st.expander("Race"):
-    ### Completion ratio
-    st.markdown("#### Completion ratio")
-    fig_completion_ratio = create_completion_ratio_plot(
-        _db=db,
-        grandprix=grandprix_to_show,
-        ser_grandprix_this_season=df_calendar["grandprix"],
-    )
-    st.pyplot(fig_completion_ratio)
-
-    ### Race time
-    st.markdown("#### Race time")
-    fig_race_time = create_race_time_plot(_db=db, grandprix=grandprix_to_show)
-    st.pyplot(fig_race_time)
-
-with st.expander("Grid"):
-    ## Winning probability from each grid
-    st.markdown("#### Result Probabilities from each grid")
-    fig_win_prob, fig_pod_prob, fig_point_prob = (
-        create_probability_from_each_grid_plots(_db=db, grandprix=grandprix_to_show)
-    )
-    st.pyplot(fig_win_prob)
-    st.pyplot(fig_pod_prob)
-    st.pyplot(fig_point_prob)
-
-with st.expander("Pit stop"):
-    ## Pit stop count proportion
-    st.markdown("#### Pit stop count proportion")
-    fig_pit_count = create_pit_stop_count_plot(_db=db, grandprix=grandprix_to_show)
-    st.pyplot(fig_pit_count)
-
-    ## First pit stop timing
-    st.markdown("#### First pit stop timing")
-    fig_first_pit = create_first_pit_stop_timing_plot(
-        _db=db, grandprix=grandprix_to_show
-    )
-    st.pyplot(fig_first_pit)
 
 st.subheader(f"Stats of drivers")
-with st.expander("Drivers"):
+
+with st.expander("Qualify"):
+    st.markdown("#### Past qualify result")
+    fig_past_qualify_performance = create_driver_past_qualify_result_plot(
+        _db=db, grandprix=grandprix_to_show, season=SEASON
+    )
+    st.pyplot(fig_past_qualify_performance)
+
+with st.expander("Race"):
     ## Past performance at the grandprix
     st.markdown("#### Past race result")
     fig_past_race_performance = create_driver_past_race_result_plot(
         _db=db, grandprix=grandprix_to_show, season=SEASON
     )
     st.pyplot(fig_past_race_performance)
-
-    st.markdown("#### Past qualify result")
-    fig_past_qualify_performance = create_driver_past_qualify_result_plot(
-        _db=db, grandprix=grandprix_to_show, season=SEASON
-    )
-    st.pyplot(fig_past_qualify_performance)
 
 st.markdown("### Winner prediction")
 with st.expander("Winner Prediction"):
