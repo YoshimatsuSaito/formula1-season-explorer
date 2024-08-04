@@ -601,6 +601,194 @@ def create_race_time_plot(_db: InmemoryDB, grandprix: str) -> Figure:
 
 
 @st.cache_resource(ttl=60 * 10)
+def create_driver_past_race_result_plot(
+    _db: InmemoryDB, grandprix: str, season: int
+) -> Figure:
+    """Create past race result plot with teammate result"""
+
+    def create_query(driver: str) -> str:
+        """Return query for each driver"""
+        return f"""
+            SELECT 
+                r1.season, 
+                r1.driver, 
+                r1.position,
+                r1.constructor,
+                r1.grandprix,
+                r2.driver AS teammate,
+                r2.position AS position_teammate
+            FROM 
+                race_result AS r1
+            JOIN
+                race_result AS r2
+            ON
+                r1.season = r2.season
+                AND
+                r1.grandprix = r2.grandprix
+                AND
+                r1.constructor = r2.constructor
+            WHERE 
+                r1.grandprix = '{grandprix}'
+                AND
+                r1.driver = '{driver}'
+                AND
+                r1.driver != r2.driver
+        """
+
+    # Get drivers of the season
+    df_driver_this_season = _db.execute_query(
+        f"SELECT DISTINCT driver FROM race_result WHERE season = {season}"
+    )
+
+    fig, ax = plt.subplots(
+        nrows=len(df_driver_this_season),
+        ncols=1,
+        figsize=(10, 3 * len(df_driver_this_season)),
+    )
+    for idx, driver in enumerate(df_driver_this_season["driver"].tolist()):
+        query = create_query(driver=driver)
+        df = _db.execute_query(query)
+
+        df_driver = df.loc[
+            :, ["season", "driver", "position", "constructor", "grandprix"]
+        ]
+        df_driver["driver"] = "Self"
+        df_teammate = df.loc[
+            :, ["season", "teammate", "position_teammate", "constructor", "grandprix"]
+        ]
+        df_teammate.rename(
+            columns={"teammate": "driver", "position_teammate": "position"},
+            inplace=True,
+        )
+        df_teammate["driver"] = "teammate"
+        df_concat = pd.concat([df_driver, df_teammate]).reset_index()
+
+        sns.lineplot(
+            data=df_concat,
+            x="season",
+            y="position",
+            hue="driver",
+            marker="o",
+            palette={"Self": "skyblue", "teammate": "gray"},
+            ax=ax[idx],
+            linestyle="-",
+        )
+        ax[idx].set_xlabel("")
+        ax[idx].set_ylim(0, len(df_driver_this_season))
+        ax[idx].set_ylabel("position", fontsize=14)
+        ax[idx].set_xticks(df["season"])
+        ax[idx].set_xticklabels(df["season"], rotation=45)
+        ax[idx].set_yticks(range(0, len(df_driver_this_season) + 1))
+        ax[idx].set_yticklabels(
+            [
+                str(x) if x % 2 != 0 else ""
+                for x in range(0, len(df_driver_this_season) + 1)
+            ]
+        )
+        ax[idx].set_title(driver)
+        ax[idx].legend(title="")
+        for p in [3, 10]:
+            ax[idx].axhline(y=p, color="gray", alpha=0.5, ls="--")
+
+    plt.tight_layout()
+    return fig
+
+
+@st.cache_resource(ttl=60 * 10)
+def create_driver_past_qualify_result_plot(
+    _db: InmemoryDB, grandprix: str, season: int
+) -> Figure:
+    """Create past race result plot with teammate result"""
+
+    def create_query(driver: str) -> str:
+        """Return query for each driver"""
+        return f"""
+            SELECT 
+                q1.season, 
+                q1.driver, 
+                q1.position,
+                q1.constructor,
+                q1.grandprix,
+                q2.driver AS teammate,
+                q2.position AS position_teammate
+            FROM 
+                qualifying AS q1
+            JOIN
+                qualifying AS q2
+            ON
+                q1.season = q2.season
+                AND
+                q1.grandprix = q2.grandprix
+                AND
+                q1.constructor = q2.constructor
+            WHERE 
+                q1.grandprix = '{grandprix}'
+                AND
+                q1.driver = '{driver}'
+                AND
+                q1.driver != q2.driver
+        """
+
+    # Get drivers of the season
+    df_driver_this_season = _db.execute_query(
+        f"SELECT DISTINCT driver FROM race_result WHERE season = {season}"
+    )
+
+    fig, ax = plt.subplots(
+        nrows=len(df_driver_this_season),
+        ncols=1,
+        figsize=(10, 3 * len(df_driver_this_season)),
+    )
+    for idx, driver in enumerate(df_driver_this_season["driver"].tolist()):
+        query = create_query(driver=driver)
+        df = _db.execute_query(query)
+
+        df_driver = df.loc[
+            :, ["season", "driver", "position", "constructor", "grandprix"]
+        ]
+        df_driver["driver"] = "Self"
+        df_teammate = df.loc[
+            :, ["season", "teammate", "position_teammate", "constructor", "grandprix"]
+        ]
+        df_teammate.rename(
+            columns={"teammate": "driver", "position_teammate": "position"},
+            inplace=True,
+        )
+        df_teammate["driver"] = "teammate"
+        df_concat = pd.concat([df_driver, df_teammate]).reset_index()
+
+        sns.lineplot(
+            data=df_concat,
+            x="season",
+            y="position",
+            hue="driver",
+            marker="o",
+            palette={"Self": "skyblue", "teammate": "gray"},
+            ax=ax[idx],
+            linestyle="-",
+        )
+        ax[idx].set_xlabel("")
+        ax[idx].set_ylim(0, len(df_driver_this_season))
+        ax[idx].set_ylabel("position", fontsize=14)
+        ax[idx].set_xticks(df["season"])
+        ax[idx].set_xticklabels(df["season"], rotation=45)
+        ax[idx].set_yticks(range(0, len(df_driver_this_season) + 1))
+        ax[idx].set_yticklabels(
+            [
+                str(x) if x % 2 != 0 else ""
+                for x in range(0, len(df_driver_this_season) + 1)
+            ]
+        )
+        ax[idx].set_title(driver)
+        ax[idx].legend(title="")
+        for p in [3, 10]:
+            ax[idx].axhline(y=p, color="gray", alpha=0.5, ls="--")
+
+    plt.tight_layout()
+    return fig
+
+
+@st.cache_resource(ttl=60 * 10)
 def create_winner_prediction_plot(df_winner_prediction_result: pd.DataFrame) -> Figure:
     """Create winner prediction figure
     NOTE: This is adhoc function for design"""
