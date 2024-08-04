@@ -13,8 +13,8 @@ from modules.utils import load_config
 from ui import (create_completion_ratio_plot,
                 create_diff_fastest_lap_and_pole_time_plot,
                 create_driver_past_qualify_result_plot,
-                create_driver_past_race_result_plot, create_fastest_lap_plot,
-                create_fastest_lap_timing_plot,
+                create_driver_past_race_result_plot, create_drivers_point_plot,
+                create_fastest_lap_plot, create_fastest_lap_timing_plot,
                 create_first_pit_stop_timing_plot, create_pit_stop_count_plot,
                 create_pole_position_time_plot,
                 create_probability_from_each_grid_plots,
@@ -210,6 +210,11 @@ with st.expander("Race"):
         _db=db, grandprix=grandprix_to_show, season=SEASON
     )
     st.pyplot(fig_past_race_performance)
+
+with st.expander("Season so far"):
+    st.markdown("#### Point standings")
+    fig_point_standings = create_drivers_point_plot(_db=db, season=SEASON)
+    st.pyplot(fig_point_standings)
 
 st.markdown("### Winner prediction")
 with st.expander("Winner Prediction"):
