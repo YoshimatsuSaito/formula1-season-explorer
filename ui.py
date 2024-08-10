@@ -8,6 +8,7 @@ from matplotlib.figure import Figure
 from modules.inmemory_db import InmemoryDB
 from modules.utils import get_latest_grandprix
 
+_DRIVER_NUM_CONSTANT = 20
 
 def get_round_grandprix_from_sidebar(df_calendar: pd.DataFrame) -> tuple[int, str]:
     """Identify the target round to show"""
@@ -28,16 +29,6 @@ def get_round_grandprix_from_sidebar(df_calendar: pd.DataFrame) -> tuple[int, st
         df_calendar["round"] == round_to_show, "grandprix"
     ].iloc[0]
     return round_to_show, grandprix_to_show
-
-
-def plot_calendar(df_calendar: pd.DataFrame) -> None:
-    """Create grandprix race date calendar"""
-    with st.expander("Calendar"):
-        for _, row in df_calendar.iterrows():
-            str_expr = (
-                f"Rd. {row['round']}: {row['grandprix']} ({row['month']}/{row['date']})"
-            )
-            st.caption(str_expr)
 
 
 @st.cache_resource(ttl=60 * 10)
@@ -614,7 +605,7 @@ def create_race_time_plot(_db: InmemoryDB, grandprix: str) -> Figure:
 
 @st.cache_resource(ttl=60 * 10)
 def create_driver_past_race_result_plot(
-    _db: InmemoryDB, grandprix: str, season: int
+    _db: InmemoryDB, grandprix: str, season: int, driver: str
 ) -> Figure:
     """Create past race result plot with teammate result"""
 
@@ -647,77 +638,55 @@ def create_driver_past_race_result_plot(
                 r1.driver != r2.driver
         """
 
-    # Get drivers of the season
-    df_driver_points = _db.execute_query(
-        f"""
-            SELECT
-                driver,
-                SUM(points) as total_points
-            FROM
-                race_result
-            WHERE
-                season = {season}
-            GROUP BY
-                driver
-            ORDER BY
-                total_points DESC
-        """
+    fig, ax = plt.subplots()
+    query = create_query(driver=driver)
+    df = _db.execute_query(query)
+
+    # get winning rate
+    df["position"].fillna(_DRIVER_NUM_CONSTANT, inplace=True)
+    df["position_teammate"].fillna(_DRIVER_NUM_CONSTANT, inplace=True)
+    df_tmp = df.loc[df["position"] != df["position_teammate"]].copy()
+    winning_percentage = (
+        (df_tmp["position"] < df_tmp["position_teammate"]).sum() / len(df_tmp)
+    ) * 100
+
+    df_driver = df.loc[
+        :, ["season", "driver", "position", "constructor", "grandprix"]
+    ]
+    df_driver["driver"] = "Self"
+    df_teammate = df.loc[
+        :, ["season", "teammate", "position_teammate", "constructor", "grandprix"]
+    ]
+    df_teammate.rename(
+        columns={"teammate": "driver", "position_teammate": "position"},
+        inplace=True,
     )
+    df_teammate["driver"] = "teammate"
+    df_concat = pd.concat([df_driver, df_teammate]).reset_index()
 
-    fig, ax = plt.subplots(
-        nrows=len(df_driver_points),
-        ncols=1,
-        figsize=(10, 3 * len(df_driver_points)),
+    sns.lineplot(
+        data=df_concat,
+        x="season",
+        y="position",
+        hue="driver",
+        marker="o",
+        palette={"Self": "skyblue", "teammate": "gray"},
+        ax=ax,
+        linestyle="-",
     )
-    for idx, driver in enumerate(df_driver_points["driver"].tolist()):
-        query = create_query(driver=driver)
-        df = _db.execute_query(query)
-
-        # get winning rate
-        df["position"].fillna(len(df_driver_points), inplace=True)
-        df["position_teammate"].fillna(len(df_driver_points), inplace=True)
-        df_tmp = df.loc[df["position"] != df["position_teammate"]].copy()
-        winning_percentage = (
-            (df_tmp["position"] < df_tmp["position_teammate"]).sum() / len(df_tmp)
-        ) * 100
-
-        df_driver = df.loc[
-            :, ["season", "driver", "position", "constructor", "grandprix"]
-        ]
-        df_driver["driver"] = "Self"
-        df_teammate = df.loc[
-            :, ["season", "teammate", "position_teammate", "constructor", "grandprix"]
-        ]
-        df_teammate.rename(
-            columns={"teammate": "driver", "position_teammate": "position"},
-            inplace=True,
-        )
-        df_teammate["driver"] = "teammate"
-        df_concat = pd.concat([df_driver, df_teammate]).reset_index()
-
-        sns.lineplot(
-            data=df_concat,
-            x="season",
-            y="position",
-            hue="driver",
-            marker="o",
-            palette={"Self": "skyblue", "teammate": "gray"},
-            ax=ax[idx],
-            linestyle="-",
-        )
-        ax[idx].set_xlabel("")
-        ax[idx].set_ylim(0, len(df_driver_points))
-        ax[idx].set_ylabel("position", fontsize=14)
-        ax[idx].set_xticks(df["season"])
-        ax[idx].set_xticklabels(df["season"], rotation=45)
-        ax[idx].set_yticks(range(0, len(df_driver_points) + 1))
-        ax[idx].set_yticklabels(
-            [str(x) if x % 2 != 0 else "" for x in range(0, len(df_driver_points) + 1)]
-        )
-        ax[idx].set_title(f"{driver} ({winning_percentage:.2f}% win)")
-        ax[idx].legend(title="")
-        for p in [3, 10]:
-            ax[idx].axhline(y=p, color="gray", alpha=0.5, ls="--")
+    ax.set_xlabel("")
+    ax.set_ylim(0, _DRIVER_NUM_CONSTANT)
+    ax.set_ylabel("position", fontsize=14)
+    ax.set_xticks(df["season"])
+    ax.set_xticklabels(df["season"], rotation=45)
+    ax.set_yticks(range(0, _DRIVER_NUM_CONSTANT + 1))
+    ax.set_yticklabels(
+        [str(x) if x % 2 != 0 else "" for x in range(0, _DRIVER_NUM_CONSTANT + 1)]
+    )
+    ax.set_title(f"{driver} ({winning_percentage:.2f}% win)")
+    ax.legend(title="")
+    for p in [3, 10]:
+        ax.axhline(y=p, color="gray", alpha=0.5, ls="--")
 
     plt.tight_layout()
     return fig
@@ -725,7 +694,7 @@ def create_driver_past_race_result_plot(
 
 @st.cache_resource(ttl=60 * 10)
 def create_driver_past_qualify_result_plot(
-    _db: InmemoryDB, grandprix: str, season: int
+    _db: InmemoryDB, grandprix: str, season: int, driver: str
 ) -> Figure:
     """Create past qualify result plot with teammate result"""
 
@@ -775,67 +744,63 @@ def create_driver_past_qualify_result_plot(
         """
     )
 
-    fig, ax = plt.subplots(
-        nrows=len(df_driver_points),
-        ncols=1,
-        figsize=(10, 3 * len(df_driver_points)),
+    fig, ax = plt.subplots()
+
+    query = create_query(driver=driver)
+    df = _db.execute_query(query)
+
+    # get winning rate
+    df["position"].fillna(_DRIVER_NUM_CONSTANT, inplace=True)
+    df["position_teammate"].fillna(_DRIVER_NUM_CONSTANT, inplace=True)
+    df_tmp = df.loc[df["position"] != df["position_teammate"]].copy()
+    winning_percentage = (
+        (df_tmp["position"] < df_tmp["position_teammate"]).sum() / len(df_tmp)
+    ) * 100
+
+    df_driver = df.loc[
+        :, ["season", "driver", "position", "constructor", "grandprix"]
+    ]
+    df_driver["driver"] = "Self"
+    df_teammate = df.loc[
+        :, ["season", "teammate", "position_teammate", "constructor", "grandprix"]
+    ]
+    df_teammate.rename(
+        columns={"teammate": "driver", "position_teammate": "position"},
+        inplace=True,
     )
-    for idx, driver in enumerate(df_driver_points["driver"].tolist()):
-        query = create_query(driver=driver)
-        df = _db.execute_query(query)
+    df_teammate["driver"] = "teammate"
+    df_concat = pd.concat([df_driver, df_teammate]).reset_index()
 
-        # get winning rate
-        df["position"].fillna(len(df_driver_points), inplace=True)
-        df["position_teammate"].fillna(len(df_driver_points), inplace=True)
-        df_tmp = df.loc[df["position"] != df["position_teammate"]].copy()
-        winning_percentage = (
-            (df_tmp["position"] < df_tmp["position_teammate"]).sum() / len(df_tmp)
-        ) * 100
-
-        df_driver = df.loc[
-            :, ["season", "driver", "position", "constructor", "grandprix"]
-        ]
-        df_driver["driver"] = "Self"
-        df_teammate = df.loc[
-            :, ["season", "teammate", "position_teammate", "constructor", "grandprix"]
-        ]
-        df_teammate.rename(
-            columns={"teammate": "driver", "position_teammate": "position"},
-            inplace=True,
-        )
-        df_teammate["driver"] = "teammate"
-        df_concat = pd.concat([df_driver, df_teammate]).reset_index()
-
-        sns.lineplot(
-            data=df_concat,
-            x="season",
-            y="position",
-            hue="driver",
-            marker="o",
-            palette={"Self": "skyblue", "teammate": "gray"},
-            ax=ax[idx],
-            linestyle="-",
-        )
-        ax[idx].set_xlabel("")
-        ax[idx].set_ylim(0, len(df_driver_points))
-        ax[idx].set_ylabel("position", fontsize=14)
-        ax[idx].set_xticks(df["season"])
-        ax[idx].set_xticklabels(df["season"], rotation=45)
-        ax[idx].set_yticks(range(0, len(df_driver_points) + 1))
-        ax[idx].set_yticklabels(
-            [str(x) if x % 2 != 0 else "" for x in range(0, len(df_driver_points) + 1)]
-        )
-        ax[idx].set_title(f"{driver} ({winning_percentage:.2f}% win)")
-        ax[idx].legend(title="")
-        for p in [3, 10]:
-            ax[idx].axhline(y=p, color="gray", alpha=0.5, ls="--")
+    sns.lineplot(
+        data=df_concat,
+        x="season",
+        y="position",
+        hue="driver",
+        marker="o",
+        palette={"Self": "skyblue", "teammate": "gray"},
+        ax=ax,
+        linestyle="-",
+    )
+    ax.set_xlabel("")
+    ax.set_ylim(0, _DRIVER_NUM_CONSTANT)
+    ax.set_ylabel("position", fontsize=14)
+    ax.set_xticks(df["season"])
+    ax.set_xticklabels(df["season"], rotation=45)
+    ax.set_yticks(range(0, len(df_driver_points) + 1))
+    ax.set_yticklabels(
+        [str(x) if x % 2 != 0 else "" for x in range(0, len(df_driver_points) + 1)]
+    )
+    ax.set_title(f"{driver} ({winning_percentage:.2f}% win)")
+    ax.legend(title="")
+    for p in [3, 10]:
+        ax.axhline(y=p, color="gray", alpha=0.5, ls="--")
 
     plt.tight_layout()
     return fig
 
 
 @st.cache_resource(ttl=60 * 10)
-def create_drivers_point_plot(_db: InmemoryDB, season: int) -> Figure:
+def create_drivers_point_plot(_db: InmemoryDB, season: int, driver_target: str) -> Figure:
     """Create drivers point plot"""
 
     query = f"""
@@ -871,6 +836,10 @@ def create_drivers_point_plot(_db: InmemoryDB, season: int) -> Figure:
     palette_under10 = sns.color_palette("cool", len(df_driver_under10))
 
     for idx, driver in enumerate(df_driver_top10["driver"].unique()):
+        if driver == driver_target:
+            color = "red"
+        else:
+            color = "gray"
         df_driver = df.loc[df["driver"] == driver]
         sns.lineplot(
             data=df_driver,
@@ -879,7 +848,7 @@ def create_drivers_point_plot(_db: InmemoryDB, season: int) -> Figure:
             marker="o",
             ax=ax[0],
             linestyle="-",
-            color=palette_top10[idx],
+            color=color,
         )
 
         ax[0].annotate(
@@ -898,6 +867,10 @@ def create_drivers_point_plot(_db: InmemoryDB, season: int) -> Figure:
     ax[0].set_title("Top10 drivers")
 
     for idx, driver in enumerate(df_driver_under10["driver"].unique()):
+        if driver == driver_target:
+            color = "red"
+        else:
+            color = "gray"
         df_driver = df.loc[df["driver"] == driver]
         sns.lineplot(
             data=df_driver,
@@ -906,7 +879,7 @@ def create_drivers_point_plot(_db: InmemoryDB, season: int) -> Figure:
             marker="o",
             ax=ax[1],
             linestyle="-",
-            color=palette_under10[idx],
+            color=color,
         )
 
         ax[1].annotate(
@@ -959,26 +932,26 @@ def show_user_search_result(
 
     list_result_type = [x if x != "qualify" else f"{x}ing" for x in list_result_type]
 
-    with st.expander("Search past results"):
-        # Users choose season
-        df_season = db.execute_query(
-            "SELECT DISTINCT season FROM race_result ORDER BY season"
+    # Users choose season
+    df_season = db.execute_query(
+        "SELECT DISTINCT season FROM race_result ORDER BY season"
+    )
+    season = st.selectbox(
+        label="Season",
+        options=df_season["season"],
+        index=len(df_season)-2
+    )
+    # Show the result
+    dict_df = dict()
+    for result_type in list_result_type:
+        df = db.execute_query(
+            f"SELECT * FROM {result_type} WHERE season = {season} AND grandprix = '{grandprix}'"
         )
-        season = st.selectbox(
-            label="Season",
-            options=df_season["season"],
-        )
-        # Show the result
-        dict_df = dict()
-        for result_type in list_result_type:
-            df = db.execute_query(
-                f"SELECT * FROM {result_type} WHERE season = {season} AND grandprix = '{grandprix}'"
-            )
-            if "position" in df.columns:
-                df.sort_values(by="position", inplace=True)
-            dict_df[result_type] = df
+        if "position" in df.columns:
+            df.sort_values(by="position", inplace=True)
+        dict_df[result_type] = df
 
-        for result_type in list_result_type:
-            st.markdown(f"##### {result_type}")
+    for result_type in list_result_type:
+        st.markdown(f"##### {result_type}")
 
-            st.dataframe(dict_df[result_type], hide_index=True)
+        st.dataframe(dict_df[result_type], hide_index=True)
