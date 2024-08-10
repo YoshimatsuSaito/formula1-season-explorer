@@ -19,10 +19,10 @@ from ui import (create_completion_ratio_plot,
                 create_pole_position_time_plot,
                 create_probability_from_each_grid_plots,
                 create_q1_threshold_plot, create_q2_threshold_plot,
-                create_qualify_diff_1st_2nd_plot, create_race_time_plot,
+                create_qualify_diff_1st_2nd_plot, create_qualify_top3_table,
+                create_race_time_plot, create_race_top3_table,
                 create_winner_prediction_plot,
-                get_round_grandprix_from_sidebar,
-                show_user_search_result)
+                get_round_grandprix_from_sidebar, show_user_search_result)
 
 load_dotenv()
 
@@ -131,7 +131,7 @@ page = st.radio(
         "Previous stats of drivers for this GP",
         "Made by AI",
         "Search your own interest",
-        ""
+        "",
     ],
     index=0,
 )
@@ -140,9 +140,18 @@ if page == "Grandprix":
     # Show stats
     st.subheader(f"Stats of the GrandPrix")
 
-    genre = st.selectbox("Select data type", ["Qualify", "Grid", "Race", "Pit stop", "Fastest lap"], index=0)
+    genre = st.selectbox(
+        "Select data type",
+        ["Qualify", "Grid", "Race", "Pit stop", "Fastest lap"],
+        index=0,
+    )
 
     if genre == "Qualify":
+        ## Past top3 qualifier
+        st.markdown("#### Past top 3 drivers")
+        df = create_qualify_top3_table(_db=db, grandprix=grandprix_to_show)
+        st.dataframe(df)
+
         ## Pole position time
         st.markdown("#### Pole position time")
         fig_pole = create_pole_position_time_plot(_db=db, grandprix=grandprix_to_show)
@@ -160,9 +169,10 @@ if page == "Grandprix":
 
         ## Q3 sec Difference between 1st and 2nd
         st.markdown("#### Difference between pole sitter and 2nd")
-        fig_q_diff = create_qualify_diff_1st_2nd_plot(_db=db, grandprix=grandprix_to_show)
+        fig_q_diff = create_qualify_diff_1st_2nd_plot(
+            _db=db, grandprix=grandprix_to_show
+        )
         st.pyplot(fig_q_diff)
-
 
     if genre == "Grid":
         ## Winning probability from each grid
@@ -174,8 +184,12 @@ if page == "Grandprix":
         st.pyplot(fig_pod_prob)
         st.pyplot(fig_point_prob)
 
-
     if genre == "Race":
+        ## Past top3 qualifier
+        st.markdown("#### Past top 3 drivers")
+        df = create_qualify_top3_table(_db=db, grandprix=grandprix_to_show)
+        st.dataframe(df)
+
         ### Completion ratio
         st.markdown("#### Completion ratio")
         fig_completion_ratio = create_completion_ratio_plot(
@@ -243,11 +257,13 @@ if page == "Drivers":
     st.pyplot(fig_past_race_performance)
 
     st.markdown("#### Point standings")
-    fig_point_standings = create_drivers_point_plot(_db=db, season=SEASON, driver_target=driver)
+    fig_point_standings = create_drivers_point_plot(
+        _db=db, season=SEASON, driver_target=driver
+    )
     st.pyplot(fig_point_standings)
 
 if page == "Winner prediction":
-    st.markdown("### Winner prediction")    
+    st.markdown("### Winner prediction")
     # Show race prediction
     model_input_data = _cached_make_model_input_data(df_calendar=df_calendar)
     classifier = _cached_classifier()

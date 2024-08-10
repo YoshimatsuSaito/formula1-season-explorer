@@ -10,6 +10,7 @@ from modules.utils import get_latest_grandprix
 
 _DRIVER_NUM_CONSTANT = 20
 
+
 def get_round_grandprix_from_sidebar(df_calendar: pd.DataFrame) -> tuple[int, str]:
     """Identify the target round to show"""
     ser_default = get_latest_grandprix(df_calendar=df_calendar)
@@ -44,6 +45,54 @@ def plot_circuit(array_geo: np.array) -> Figure:
     ax.set_xlabel("")
     ax.set_ylabel("")
     return fig
+
+
+@st.cache_data(ttl=60 * 10)
+def create_qualify_top3_table(_db: InmemoryDB, grandprix: str) -> pd.DataFrame:
+    """Create Qualify Top3 drivers table"""
+    query = f"""
+        SELECT
+            driver,
+            position,
+            season,
+        FROM
+            qualifying
+        WHERE
+            grandprix = '{grandprix}'
+            AND
+            position IN (1, 2, 3)
+    """
+    df = _db.execute_query(query)
+    df = df.pivot_table(
+        index="season", columns="position", values="driver", aggfunc="first"
+    )
+    df.index.name = "Year"
+    df.sort_index(ascending=False, inplace=True)
+    return df
+
+
+@st.cache_data(ttl=60 * 10)
+def create_race_top3_table(_db: InmemoryDB, grandprix: str) -> pd.DataFrame:
+    """Create Qualify Top3 drivers table"""
+    query = f"""
+        SELECT
+            driver,
+            position,
+            season,
+        FROM
+            race_result
+        WHERE
+            grandprix = '{grandprix}'
+            AND
+            position IN (1, 2, 3)
+    """
+    df = _db.execute_query(query)
+    df = df.pivot_table(
+        index="season", columns="position", values="driver", aggfunc="first"
+    )
+    df.index.name = "Year"
+    df.sort_index(ascending=False, inplace=True)
+    return df
 
 
 @st.cache_resource(ttl=60 * 10)
@@ -650,9 +699,7 @@ def create_driver_past_race_result_plot(
         (df_tmp["position"] < df_tmp["position_teammate"]).sum() / len(df_tmp)
     ) * 100
 
-    df_driver = df.loc[
-        :, ["season", "driver", "position", "constructor", "grandprix"]
-    ]
+    df_driver = df.loc[:, ["season", "driver", "position", "constructor", "grandprix"]]
     df_driver["driver"] = "Self"
     df_teammate = df.loc[
         :, ["season", "teammate", "position_teammate", "constructor", "grandprix"]
@@ -757,9 +804,7 @@ def create_driver_past_qualify_result_plot(
         (df_tmp["position"] < df_tmp["position_teammate"]).sum() / len(df_tmp)
     ) * 100
 
-    df_driver = df.loc[
-        :, ["season", "driver", "position", "constructor", "grandprix"]
-    ]
+    df_driver = df.loc[:, ["season", "driver", "position", "constructor", "grandprix"]]
     df_driver["driver"] = "Self"
     df_teammate = df.loc[
         :, ["season", "teammate", "position_teammate", "constructor", "grandprix"]
@@ -800,7 +845,9 @@ def create_driver_past_qualify_result_plot(
 
 
 @st.cache_resource(ttl=60 * 10)
-def create_drivers_point_plot(_db: InmemoryDB, season: int, driver_target: str) -> Figure:
+def create_drivers_point_plot(
+    _db: InmemoryDB, season: int, driver_target: str
+) -> Figure:
     """Create drivers point plot"""
 
     query = f"""
@@ -832,10 +879,7 @@ def create_drivers_point_plot(_db: InmemoryDB, season: int, driver_target: str) 
     df_driver_top10 = df_driver_rank_sort.iloc[:10]
     df_driver_under10 = df_driver_rank_sort.iloc[10:]
 
-    palette_top10 = sns.color_palette("cool", len(df_driver_top10))
-    palette_under10 = sns.color_palette("cool", len(df_driver_under10))
-
-    for idx, driver in enumerate(df_driver_top10["driver"].unique()):
+    for driver in df_driver_top10["driver"].unique():
         if driver == driver_target:
             color = "red"
         else:
@@ -866,7 +910,7 @@ def create_drivers_point_plot(_db: InmemoryDB, season: int, driver_target: str) 
     ax[0].set_xlabel("Round")
     ax[0].set_title("Top10 drivers")
 
-    for idx, driver in enumerate(df_driver_under10["driver"].unique()):
+    for driver in df_driver_under10["driver"].unique():
         if driver == driver_target:
             color = "red"
         else:
@@ -937,9 +981,7 @@ def show_user_search_result(
         "SELECT DISTINCT season FROM race_result ORDER BY season"
     )
     season = st.selectbox(
-        label="Season",
-        options=df_season["season"],
-        index=len(df_season)-2
+        label="Season", options=df_season["season"], index=len(df_season) - 2
     )
     # Show the result
     dict_df = dict()
