@@ -18,8 +18,8 @@ from ui import (create_completion_ratio_plot,
                 create_first_pit_stop_timing_plot, create_pit_stop_count_plot,
                 create_pole_position_time_plot,
                 create_probability_from_each_grid_plots,
-                create_q1_threshold_plot, create_q2_threshold_plot,
-                create_qualify_diff_1st_2nd_plot, create_qualify_top3_table,
+                create_q3_marginal_gain_plot, create_qualify_diff_1st_2nd_plot,
+                create_qualify_marginal_gain_plot, create_qualify_top3_table,
                 create_race_time_plot, create_race_top3_table,
                 create_winner_prediction_plot,
                 get_round_grandprix_from_sidebar, show_user_search_result)
@@ -157,15 +157,38 @@ if page == "Grandprix":
         fig_pole = create_pole_position_time_plot(_db=db, grandprix=grandprix_to_show)
         st.pyplot(fig_pole)
 
-        ## Q1 -> Q2 threshold
-        st.markdown("#### Q1 -> Q2 threshold")
-        fig_q1_thr = create_q1_threshold_plot(_db=db, grandprix=grandprix_to_show)
+        ## Q1
+        st.markdown("#### Q1: ラップタイムの変化が順位に与える影響")
+        fig_q1_thr = create_qualify_marginal_gain_plot(
+            _db=db,
+            grandprix=grandprix_to_show,
+            q_session="q1",
+            reference_position=15,
+            lower_position=20,
+        )
         st.pyplot(fig_q1_thr)
 
-        ## Q2 -> Q3 threshold
-        st.markdown("#### Q2 -> Q3 threshold")
-        fig_q2_thr = create_q2_threshold_plot(_db=db, grandprix=grandprix_to_show)
+        ## Q2
+        st.markdown("#### Q2: ラップタイムの変化が順位に与える影響")
+        fig_q2_thr = create_qualify_marginal_gain_plot(
+            _db=db,
+            grandprix=grandprix_to_show,
+            q_session="q2",
+            reference_position=10,
+            lower_position=15,
+        )
         st.pyplot(fig_q2_thr)
+
+        ## Q3
+        st.markdown("#### Q3: ラップタイムの変化が順位に与える影響")
+        fig_q3_thr = create_q3_marginal_gain_plot(
+            _db=db,
+            grandprix=grandprix_to_show,
+            q_session="q3",
+            reference_position=1,
+            lower_position=10,
+        )
+        st.pyplot(fig_q3_thr)
 
         ## Q3 sec Difference between 1st and 2nd
         st.markdown("#### Difference between pole sitter and 2nd")
@@ -185,9 +208,9 @@ if page == "Grandprix":
         st.pyplot(fig_point_prob)
 
     if genre == "Race":
-        ## Past top3 qualifier
+        ## Past top3 finisher
         st.markdown("#### Past top 3 drivers")
-        df = create_qualify_top3_table(_db=db, grandprix=grandprix_to_show)
+        df = create_race_top3_table(_db=db, grandprix=grandprix_to_show)
         st.dataframe(df)
 
         ### Completion ratio
