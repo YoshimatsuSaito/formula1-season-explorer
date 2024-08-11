@@ -99,7 +99,7 @@ def create_race_top3_table(_db: InmemoryDB, grandprix: str) -> pd.DataFrame:
 
 @st.cache_resource(ttl=60 * 10)
 def create_pole_position_time_plot(_db: InmemoryDB, grandprix: str) -> Figure:
-    """Create pole position time"""
+    """Create Pole Position Time Plot"""
     query = f"""
     SELECT season, q3_sec 
     FROM qualifying 
@@ -119,7 +119,7 @@ def create_pole_position_time_plot(_db: InmemoryDB, grandprix: str) -> Figure:
         linestyle="-",
     )
     ax.set_xlabel("Year", fontsize=14)
-    ax.set_ylabel("sec", fontsize=14)
+    ax.set_ylabel("Seconds", fontsize=14)
     ax.set_xticks(df["season"])
     ax.set_xticklabels(df["season"], rotation=45)
 
@@ -146,7 +146,7 @@ def create_qualify_marginal_gain_plot(
     reference_position: int,
     lower_position: int,
 ) -> Figure:
-    """Create Q1 -> Q2 thredhold"""
+    """Create Qualifying Marginal Gain Plot"""
     query = f"""
         SELECT 
             season, {q_session}_sec
@@ -209,7 +209,7 @@ def create_qualify_marginal_gain_plot(
         alpha=0.8,
         color="lightgreen",
         ls="-",
-        label="突破ライン",
+        label="Qualifying Cut-off Line",
     )
     for i in np.arange(-2, 2.1, 0.1):
         ax.axvline(x=i, alpha=0.3, color="gray", ls="--", lw=1)
@@ -220,12 +220,12 @@ def create_qualify_marginal_gain_plot(
         color="red",
         ax=ax,
         linestyle="-",
-        label=f"近似曲線 ({df['season'].min()} - {df['season'].max()})",
+        label=f"Fitted Curve ({df['season'].min()} - {df['season'].max()})",
     )
 
     for idx, (season, group) in enumerate(df.groupby("season")):
         if season == df["season"].max():
-            label = f"直近の開催 ({season})"
+            label = f"Most Recent Session ({season})"
             color = "skyblue"
             alpha = 1
         else:
@@ -244,8 +244,11 @@ def create_qualify_marginal_gain_plot(
             label=label,
         )
 
-    ax.set_ylabel("順位", fontsize=14)
-    ax.set_xlabel(f"突破ライン({reference_position}位)からのタイム差(秒)", fontsize=14)
+    ax.set_ylabel("Position", fontsize=14)
+    ax.set_xlabel(
+        f"Time Difference (seconds) from Cut-off ({reference_position}th Position)",
+        fontsize=14,
+    )
     ax.set_xticks(np.arange(-2, 2.1, 0.1))
     ax.set_xticklabels(
         [
@@ -263,7 +266,7 @@ def create_qualify_marginal_gain_plot(
     ax.set_ylim(-1 * (lower_position + 1), 0)
 
     ax.set_title(
-        f"突破ライン({reference_position}位)付近での0.1秒のGain/Loss: {slope_at_x0:.2f}位の変動"
+        f"Impact of 0.1 Second Gain/Loss Around Cut-off ({reference_position}th Position): Change of {slope_at_x0:.2f} Positions"
     )
     ax.legend(loc="upper left")
 
@@ -280,7 +283,7 @@ def create_q3_marginal_gain_plot(
     reference_position: int = 1,
     lower_position: int = 10,
 ) -> Figure:
-    """Create Q1 -> Q2 thredhold"""
+    """Create Q3 Marginal Gain Plot"""
     query = f"""
         SELECT 
             season, {q_session}_sec
@@ -341,12 +344,12 @@ def create_q3_marginal_gain_plot(
         color="red",
         ax=ax,
         linestyle="-",
-        label=f"近似曲線 ({df['season'].min()} - {df['season'].max()})",
+        label=f"Fitted Line ({df['season'].min()} - {df['season'].max()})",
     )
 
     for idx, (season, group) in enumerate(df.groupby("season")):
         if season == df["season"].max():
-            label = f"直近の開催 ({season})"
+            label = (f"Most Recent Session ({season})",)
             color = "skyblue"
             alpha = 1
         else:
@@ -365,8 +368,8 @@ def create_q3_marginal_gain_plot(
             label=label,
         )
 
-    ax.set_ylabel("順位", fontsize=14)
-    ax.set_xlabel(f"ポールポジションからのタイム差(秒)", fontsize=14)
+    ax.set_ylabel("Position", fontsize=14)
+    ax.set_xlabel(f"Time Difference (seconds) from Pole Position", fontsize=14)
     ax.set_xticks(np.arange(-2, 0.1, 0.1))
     ax.set_xticklabels(
         [
@@ -379,7 +382,9 @@ def create_q3_marginal_gain_plot(
     ax.set_xlim(-2, 0.1)
     ax.set_ylim(-1 * (lower_position + 1), 0)
 
-    ax.set_title(f"ポールポジション付近での0.1秒のGain/Loss: {(slope/10):.2f}位の変動")
+    ax.set_title(
+        f"Impact of 0.1 Second Gain/Loss Around Pole Position: Change of {(slope/10):.2f} Positions"
+    )
     ax.legend(loc="upper left")
 
     plt.tight_layout()
@@ -389,7 +394,7 @@ def create_q3_marginal_gain_plot(
 
 @st.cache_resource(ttl=60 * 10)
 def create_qualify_diff_1st_2nd_plot(_db: InmemoryDB, grandprix: str) -> Figure:
-    """Create time difference between pole sitter and 2nd"""
+    """Create Time Difference Between Pole Sitter and 2nd Place"""
     query = f"""
         SELECT
             q_1st.season,
@@ -413,7 +418,7 @@ def create_qualify_diff_1st_2nd_plot(_db: InmemoryDB, grandprix: str) -> Figure:
         data=df, x="season", y="diff_1st_2nd", color="skyblue", ax=ax, marker="o"
     )
     ax.set_xlabel("Year", fontsize=14)
-    ax.set_ylabel("sec", fontsize=14)
+    ax.set_ylabel("Time Difference (Seconds)", fontsize=14)
     ax.set_xticks(df["season"])
     ax.set_xticklabels(df["season"], rotation=45)
 
@@ -433,7 +438,7 @@ def create_qualify_diff_1st_2nd_plot(_db: InmemoryDB, grandprix: str) -> Figure:
 
 @st.cache_resource(ttl=60 * 10)
 def create_fastest_lap_plot(_db: InmemoryDB, grandprix: str) -> Figure:
-    """Create fastest lap trajectry"""
+    """Create Fastest Lap Trajectory"""
     query = f"""
     SELECT season, time_sec 
     FROM fastest_lap 
@@ -453,7 +458,7 @@ def create_fastest_lap_plot(_db: InmemoryDB, grandprix: str) -> Figure:
         linestyle="-",
     )
     ax.set_xlabel("Year", fontsize=14)
-    ax.set_ylabel("sec", fontsize=14)
+    ax.set_ylabel("Lap Time (Seconds)", fontsize=14)
     ax.set_xticks(df["season"])
     ax.set_xticklabels(df["season"], rotation=45)
 
@@ -474,7 +479,7 @@ def create_fastest_lap_plot(_db: InmemoryDB, grandprix: str) -> Figure:
 
 @st.cache_resource(ttl=60 * 10)
 def create_fastest_lap_timing_plot(_db: InmemoryDB, grandprix: str) -> Figure:
-    """Create fastest lap timing plot"""
+    """Create Fastest Lap Timing Plot"""
     query = f"""
         SELECT 
             lap
@@ -490,7 +495,7 @@ def create_fastest_lap_timing_plot(_db: InmemoryDB, grandprix: str) -> Figure:
     fig, ax = plt.subplots()
     sns.histplot(data=df, x="lap", color="skyblue", ax=ax, bins=40)
     ax.set_xlabel("Lap", fontsize=14)
-    ax.set_ylabel("frequency", fontsize=14)
+    ax.set_ylabel("Frequency", fontsize=14)
 
     plt.tight_layout()
 
@@ -501,7 +506,7 @@ def create_fastest_lap_timing_plot(_db: InmemoryDB, grandprix: str) -> Figure:
 def create_diff_fastest_lap_and_pole_time_plot(
     _db: InmemoryDB, grandprix: str, ser_grandprix_this_season: pd.Series
 ) -> Figure:
-    """Create difference between fastest lap and pole time"""
+    """Create Difference Between Fastest Lap and Pole Time"""
 
     query = f"""
         SELECT
@@ -539,8 +544,8 @@ def create_diff_fastest_lap_and_pole_time_plot(
         ax=ax,
         palette=colors,
     )
-    ax.set_xlabel("Time difference (%): fastest lap / pole position time")
-    ax.set_ylabel("Grandprix")
+    ax.set_xlabel("Time Difference (%): Fastest Lap / Pole Position Time", fontsize=14)
+    ax.set_ylabel("Grand Prix", fontsize=14)
 
     plt.tight_layout()
 
@@ -549,7 +554,7 @@ def create_diff_fastest_lap_and_pole_time_plot(
 
 @st.cache_resource(ttl=60 * 10)
 def create_pit_stop_count_plot(_db: InmemoryDB, grandprix: str) -> Figure:
-    """Create pit stop count proportion"""
+    """Create Pit Stop Count Proportion Plot"""
     query = f"""
         SELECT
             driver,
@@ -592,8 +597,8 @@ def create_pit_stop_count_plot(_db: InmemoryDB, grandprix: str) -> Figure:
             ax=ax,
         )
         bottom += df_pit_stop_percentage[column]
-    ax.set_ylabel("%")
-    ax.set_xlabel("Year")
+    ax.set_ylabel("Percentage", fontsize=14)
+    ax.set_xlabel("Year", fontsize=14)
 
     handles, labels = plt.gca().get_legend_handles_labels()
     plt.legend(handles[::-1], labels[::-1], title="", loc="upper left")
@@ -604,7 +609,7 @@ def create_pit_stop_count_plot(_db: InmemoryDB, grandprix: str) -> Figure:
 
 @st.cache_resource(ttl=60 * 10)
 def create_first_pit_stop_timing_plot(_db: InmemoryDB, grandprix: str) -> Figure:
-    """Create first pit stop timing"""
+    """Create First Pit Stop Timing Plot"""
     query = f"""
         SELECT
             driver,
@@ -626,8 +631,8 @@ def create_first_pit_stop_timing_plot(_db: InmemoryDB, grandprix: str) -> Figure
         color="skyblue",
         ax=ax,
     )
-    ax.set_xlabel("Number of laps")
-    ax.set_ylabel("Frequency")
+    ax.set_xlabel("Lap Number", fontsize=14)
+    ax.set_ylabel("Frequency", fontsize=14)
     plt.tight_layout()
 
     return fig
