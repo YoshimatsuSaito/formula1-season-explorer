@@ -18,7 +18,7 @@ class InmemoryDB:
             if table_name not in tables.name.values:
                 if table_name == "qualify":
                     table_name = f"{table_name}ing"
-                df = load_csv_data(bucket_name=self.bucket_name, key=key)
+                df = load_csv_data(bucket_name=self.bucket_name, key=key) # noqa
                 query = f"CREATE TABLE {table_name} AS SELECT * FROM df"
                 self.con.execute(query)
 

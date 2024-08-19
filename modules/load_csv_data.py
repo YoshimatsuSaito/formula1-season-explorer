@@ -24,7 +24,6 @@ dict_dtype_columns = {
     "time_sec": float,
     "lap": "Int64",
     "avg_speed": float,
-    "time": str,
     "stops": "Int64",
     "month": int,
     "date": int,

@@ -1,7 +1,5 @@
-black
 boto3
 duckdb
-isort
 japanize-matplotlib
 lightgbm
 matplotlib

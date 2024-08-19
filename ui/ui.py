@@ -1,4 +1,3 @@
-import japanize_matplotlib
 import numpy as np
 import pandas as pd
 import seaborn as sns
@@ -369,7 +368,7 @@ def create_q3_marginal_gain_plot(
         )
 
     ax.set_ylabel("Position", fontsize=14)
-    ax.set_xlabel(f"Time Difference (seconds) from Pole Position", fontsize=14)
+    ax.set_xlabel("Time Difference (seconds) from Pole Position", fontsize=14)
     ax.set_xticks(np.arange(-2, 0.1, 0.1))
     ax.set_xticklabels(
         [
@@ -508,7 +507,7 @@ def create_diff_fastest_lap_and_pole_time_plot(
 ) -> Figure:
     """Create Difference Between Fastest Lap and Pole Time"""
 
-    query = f"""
+    query = """
         SELECT
             q.season,
             q.grandprix,
@@ -751,7 +750,7 @@ def create_completion_ratio_plot(
         return (total_count - none_count) / total_count
 
     # Detect completion ratio by position columns (None means DNF etc)
-    query = f"""
+    query = """
         SELECT
             season,
             grandprix,

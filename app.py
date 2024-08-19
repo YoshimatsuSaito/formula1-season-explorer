@@ -7,24 +7,35 @@ from dotenv import load_dotenv
 from modules.inmemory_db import InmemoryDB
 from modules.load_csv_data import load_csv_data
 from modules.model import Classifier
-from modules.preprocess import (ModelInputData, add_features,
-                                add_future_race_row, make_datamart)
+from modules.preprocess import (
+    ModelInputData,
+    add_features,
+    add_future_race_row,
+    make_datamart,
+)
 from modules.utils import load_config
-from ui.ui import (create_completion_ratio_plot,
-                   create_diff_fastest_lap_and_pole_time_plot,
-                   create_driver_past_qualify_result_plot,
-                   create_driver_past_race_result_plot,
-                   create_drivers_point_plot, create_fastest_lap_plot,
-                   create_fastest_lap_timing_plot,
-                   create_first_pit_stop_timing_plot,
-                   create_pit_stop_count_plot, create_pole_position_time_plot,
-                   create_probability_from_each_grid_plots,
-                   create_q3_marginal_gain_plot,
-                   create_qualify_diff_1st_2nd_plot,
-                   create_qualify_marginal_gain_plot,
-                   create_qualify_top3_table, create_race_time_plot,
-                   create_race_top3_table, create_winner_prediction_plot,
-                   get_round_grandprix_from_sidebar, show_user_search_result)
+from ui.ui import (
+    create_completion_ratio_plot,
+    create_diff_fastest_lap_and_pole_time_plot,
+    create_driver_past_qualify_result_plot,
+    create_driver_past_race_result_plot,
+    create_drivers_point_plot,
+    create_fastest_lap_plot,
+    create_fastest_lap_timing_plot,
+    create_first_pit_stop_timing_plot,
+    create_pit_stop_count_plot,
+    create_pole_position_time_plot,
+    create_probability_from_each_grid_plots,
+    create_q3_marginal_gain_plot,
+    create_qualify_diff_1st_2nd_plot,
+    create_qualify_marginal_gain_plot,
+    create_qualify_top3_table,
+    create_race_time_plot,
+    create_race_top3_table,
+    create_winner_prediction_plot,
+    get_round_grandprix_from_sidebar,
+    show_user_search_result,
+)
 
 load_dotenv()
 
@@ -140,7 +151,7 @@ page = st.radio(
 
 if page == "Grand Prix":
     # Show stats
-    st.subheader(f"Stats of the Grand Prix")
+    st.subheader("Stats of the Grand Prix")
 
     genre = st.selectbox(
         "Select Data Type",
@@ -265,7 +276,7 @@ if page == "Grand Prix":
         st.pyplot(fig_diff_fastest_pole)
 
 if page == "Drivers":
-    st.subheader(f"Driver Statistics")
+    st.subheader("Driver Statistics")
     driver = st.selectbox("Select a driver", df_driver["driver"].tolist(), index=0)
 
     st.markdown("#### Past Qualifying Results")
