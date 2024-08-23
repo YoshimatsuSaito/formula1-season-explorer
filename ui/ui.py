@@ -951,14 +951,22 @@ def create_driver_past_qualify_result_plot(
     df_driver_points = _db.execute_query(
         f"""
             SELECT
-                driver,
-                SUM(points) as total_points
+                r.driver,
+                SUM(COALESCE(r.points, 0)) + SUM(COALESCE(s.points, 0)) as total_points
             FROM
-                race_result
+                race_result AS r
+            LEFT JOIN
+                sprint AS s
+            ON
+                r.driver = s.driver
+                AND
+                r.grandprix = s.grandprix
+                AND
+                s.season = {season}
             WHERE
-                season = {season}
+                r.season = {season}
             GROUP BY
-                driver
+                r.driver
             ORDER BY
                 total_points DESC
         """
@@ -1025,17 +1033,25 @@ def create_drivers_point_plot(
 
     query = f"""
         SELECT 
-            driver,
-            driver_abbreviation,
-            grandprix,
-            round,
-            points
+            r.driver,
+            r.driver_abbreviation,
+            r.grandprix,
+            r.round,
+            COALESCE(r.points, 0) + COALESCE(s.points, 0) AS points
         FROM 
-            race_result
+            race_result　AS r
+        LEFT JOIN
+            sprint AS s
+        ON
+            r.driver = s.driver
+            AND
+            r.grandprix = s.grandprix
+            AND
+            s.season = {season}
         WHERE 
-            season = {season}
+            r.season = {season}
         ORDER BY
-            round
+            r.round
     """
 
     df = _db.execute_query(query)
