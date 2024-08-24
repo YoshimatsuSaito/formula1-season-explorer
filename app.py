@@ -19,7 +19,6 @@ from ui.ui import (
     create_diff_fastest_lap_and_pole_time_plot,
     create_driver_past_qualify_result_plot,
     create_driver_past_race_result_plot,
-    create_drivers_point_plot,
     create_fastest_lap_plot,
     create_fastest_lap_timing_plot,
     create_first_pit_stop_timing_plot,
@@ -154,10 +153,11 @@ if page == "Grand Prix":
     # Show stats
     st.subheader("Stats of the Grand Prix")
 
-    genre = st.selectbox(
+    genre = st.radio(
         "Select Data Type",
         ["Qualifying", "Grid", "Race", "Pit Stops", "Fastest Laps"],
         index=0,
+        horizontal=True,
     )
 
     if genre == "Qualifying":
@@ -295,10 +295,10 @@ if page == "Drivers":
     st.pyplot(fig_past_race_performance)
 
     st.markdown("#### Points Standings")
-    fig_point_standings = create_drivers_point_plot(
-        _db=db, season=SEASON, driver_target=driver
-    )
-    st.pyplot(fig_point_standings)
+    # fig_point_standings = create_drivers_point_plot(
+    #     _db=db, season=SEASON, driver_target=driver
+    # )
+    # st.pyplot(fig_point_standings)
 
 if page == "Winner Prediction":
     st.markdown("### Winner Prediction")
@@ -322,18 +322,7 @@ if page == "Custom Search":
         grandprix=grandprix_to_show,
     )
 
-
 if page == "Others":
     st.markdown("### Others")
     # Show calendar
     st.link_button("Season Full Schedule", "https://www.formula1.com/en/racing/2024")
-
-
-if __name__ == "__main__":
-    df_calendar = load_csv_data(bucket_name=BUCKET_NAME, key=f"calendar/{SEASON}.csv")
-    # Make datamart from past result
-    df = make_datamart(bucket_name=BUCKET_NAME)
-    # Add future race rows to datamart
-    df = add_future_race_row(df_datamart=df, df_calendar=df_calendar)
-    # Make features to predict
-    df = add_features(df)
