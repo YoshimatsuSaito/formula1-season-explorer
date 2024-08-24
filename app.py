@@ -19,6 +19,7 @@ from ui.ui import (
     create_diff_fastest_lap_and_pole_time_plot,
     create_driver_past_qualify_result_plot,
     create_driver_past_race_result_plot,
+    create_drivers_point_plot,
     create_fastest_lap_plot,
     create_fastest_lap_timing_plot,
     create_first_pit_stop_timing_plot,
@@ -105,6 +106,34 @@ def _cached_inmemory_db() -> InmemoryDB:
     db.create_inmemory_db(dict_csv_key=DICT_CONFIG["s3_grandprix_result_data_key"])
     return db
 
+@st.cache_data(ttl=60 * 60, show_spinner=True)
+def _cached_df_driver(_db: InmemoryDB) -> pd.DataFrame:
+    df = _db.execute_query(
+        f"""
+            SELECT
+                r.driver_abbreviation,
+                r.driver,
+                SUM(COALESCE(r.points, 0)) + SUM(COALESCE(s.points, 0)) as total_points
+            FROM
+                race_result AS r
+            LEFT JOIN
+                sprint AS s
+            ON
+                r.driver = s.driver
+                AND
+                r.grandprix = s.grandprix
+                AND
+                s.season = {SEASON}
+            WHERE
+                r.season = {SEASON}
+            GROUP BY
+                r.driver, r.driver_abbreviation
+            ORDER BY
+                total_points DESC
+        """
+    )
+    return df
+
 
 # Create sidebar and get round and grandprix
 df_calendar = _cached_calendar()
@@ -115,23 +144,8 @@ round_to_show, grandprix_to_show = get_round_grandprix_from_sidebar(
 # Setup duckdb
 db = _cached_inmemory_db()
 
-# Get drivers list in this season
-df_driver = db.execute_query(
-    f"""
-        SELECT
-            driver,
-            driver_abbreviation,
-            SUM(points) as total_points
-        FROM
-            race_result
-        WHERE
-            season = {SEASON}
-        GROUP BY
-            driver, driver_abbreviation
-        ORDER BY
-            total_points DESC
-    """
-)
+# Get driver list ordered by total points
+df_driver = _cached_df_driver(_db=db)
 
 # Show page title and circuit layout
 st.header(f"{SEASON} Round {round_to_show}: {grandprix_to_show}")
@@ -295,10 +309,10 @@ if page == "Drivers":
     st.pyplot(fig_past_race_performance)
 
     st.markdown("#### Points Standings")
-    # fig_point_standings = create_drivers_point_plot(
-    #     _db=db, season=SEASON, driver_target=driver
-    # )
-    # st.pyplot(fig_point_standings)
+    fig_point_standings = create_drivers_point_plot(
+        _db=db, season=SEASON, driver_target=driver
+    )
+    st.pyplot(fig_point_standings)
 
 if page == "Winner Prediction":
     st.markdown("### Winner Prediction")
