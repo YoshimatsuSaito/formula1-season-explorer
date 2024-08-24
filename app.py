@@ -121,13 +121,14 @@ df_driver = db.execute_query(
     f"""
         SELECT
             driver,
+            driver_abbreviation,
             SUM(points) as total_points
         FROM
             race_result
         WHERE
             season = {SEASON}
         GROUP BY
-            driver
+            driver, driver_abbreviation
         ORDER BY
             total_points DESC
     """
@@ -277,7 +278,8 @@ if page == "Grand Prix":
 
 if page == "Drivers":
     st.subheader("Driver Statistics")
-    driver = st.selectbox("Select a driver", df_driver["driver"].tolist(), index=0)
+    driver_abbreviation = st.radio("Select a driver", df_driver["driver_abbreviation"].tolist(), index=0, horizontal=True)
+    driver = df_driver.loc[df_driver["driver_abbreviation"]==driver_abbreviation, "driver"].iloc[0]
 
     st.markdown("#### Past Qualifying Results")
     fig_past_qualify_performance = create_driver_past_qualify_result_plot(
