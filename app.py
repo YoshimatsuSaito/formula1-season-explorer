@@ -152,7 +152,7 @@ st.header(f"{SEASON} Round {round_to_show}: {grandprix_to_show}")
 
 page = st.radio(
     "",
-    ["Grand Prix", "Drivers", "Winner Prediction", "Custom Search", "Others"],
+    ["Grand Prix", "Drivers", "Prediction", "Custom Search", "Miscellaneous"],
     captions=[
         "Previous statistics about this Grand Prix",
         "Previous statistics of drivers for this Grand Prix",
@@ -165,7 +165,7 @@ page = st.radio(
 
 if page == "Grand Prix":
     # Show stats
-    st.subheader("Stats of the Grand Prix")
+    st.subheader("Grand Prix Statistics")
 
     genre = st.radio(
         "Select Data Type",
@@ -219,7 +219,7 @@ if page == "Grand Prix":
         st.pyplot(fig_q3_thr)
 
         ## Q3 sec Difference between 1st and 2nd
-        st.markdown("#### Difference Between Pole Sitter and 2nd")
+        st.markdown("#### Difference Between Pole Sitter and 2nd Place")
         fig_q_diff = create_qualify_diff_1st_2nd_plot(
             _db=db, grandprix=grandprix_to_show
         )
@@ -227,7 +227,7 @@ if page == "Grand Prix":
 
     if genre == "Grid":
         ## Winning Probability from Each Grid
-        st.markdown("#### Result Probabilities From Each Grid")
+        st.markdown("#### Result Probabilities by Starting Grid")
         fig_win_prob, fig_pod_prob, fig_point_prob = (
             create_probability_from_each_grid_plots(_db=db, grandprix=grandprix_to_show)
         )
@@ -241,8 +241,8 @@ if page == "Grand Prix":
         df = create_race_top3_table(_db=db, grandprix=grandprix_to_show)
         st.dataframe(df)
 
-        ### Completion Ratio
-        st.markdown("#### Completion Ratio")
+        ### Finish Ratio
+        st.markdown("#### Finish Ratio")
         fig_completion_ratio = create_completion_ratio_plot(
             _db=db,
             grandprix=grandprix_to_show,
@@ -250,19 +250,19 @@ if page == "Grand Prix":
         )
         st.pyplot(fig_completion_ratio)
 
-        ### Race Time
-        st.markdown("#### Race Time")
+        ### Race Duration
+        st.markdown("#### Race Duration")
         fig_race_time = create_race_time_plot(_db=db, grandprix=grandprix_to_show)
         st.pyplot(fig_race_time)
 
     if genre == "Pit Stops":
-        ## Pit Stop Count Proportion
-        st.markdown("#### Pit Stop Count Proportion")
+        ## Pit Stop Frequency
+        st.markdown("#### Pit Stop Frequency")
         fig_pit_count = create_pit_stop_count_plot(_db=db, grandprix=grandprix_to_show)
         st.pyplot(fig_pit_count)
 
-        ## First Pit Stop Timing
-        st.markdown("#### First Pit Stop Timing")
+        ## Timing of First Pit Stop
+        st.markdown("#### Timing of First Pit Stop")
         fig_first_pit = create_first_pit_stop_timing_plot(
             _db=db, grandprix=grandprix_to_show
         )
@@ -275,14 +275,14 @@ if page == "Grand Prix":
         st.pyplot(fig_fastest_lap)
 
         ## Fastest Lap Timing
-        st.markdown("#### Fastest Lap Timing (After 10 Laps)")
+        st.markdown("#### Fastest Lap Timing (Post 10 Laps)")
         fig_fastest_lap_timing = create_fastest_lap_timing_plot(
             _db=db, grandprix=grandprix_to_show
         )
         st.pyplot(fig_fastest_lap_timing)
 
         ## Fastest Lap / Pole Position
-        st.markdown("#### Fastest Lap / Pole Position")
+        st.markdown("#### Fastest Lap to Pole Position Ratio")
         fig_diff_fastest_pole = create_diff_fastest_lap_and_pole_time_plot(
             _db=db,
             grandprix=grandprix_to_show,
@@ -292,7 +292,7 @@ if page == "Grand Prix":
 
 if page == "Drivers":
     st.subheader("Driver Statistics")
-    driver_abbreviation = st.radio("Select a driver", df_driver["driver_abbreviation"].tolist(), index=0, horizontal=True)
+    driver_abbreviation = st.radio("Select a Driver", df_driver["driver_abbreviation"].tolist(), index=0, horizontal=True)
     driver = df_driver.loc[df_driver["driver_abbreviation"]==driver_abbreviation, "driver"].iloc[0]
 
     st.markdown("#### Past Qualifying Results")
@@ -314,8 +314,8 @@ if page == "Drivers":
     )
     st.pyplot(fig_point_standings)
 
-if page == "Winner Prediction":
-    st.markdown("### Winner Prediction")
+if page == "Prediction":
+    st.markdown("### Race Winner Prediction")
     # Show race prediction
     model_input_data = _cached_make_model_input_data(df_calendar=df_calendar)
     classifier = _cached_classifier()
@@ -328,7 +328,7 @@ if page == "Winner Prediction":
     st.pyplot(fig_pred)
 
 if page == "Custom Search":
-    st.markdown("### Search Statistics")
+    st.markdown("### Custom Statistics Search")
     ## Users' search
     show_user_search_result(
         db=db,
@@ -336,7 +336,7 @@ if page == "Custom Search":
         grandprix=grandprix_to_show,
     )
 
-if page == "Others":
-    st.markdown("### Others")
+if page == "Miscellaneous":
+    st.markdown("### Miscellaneous")
     # Show calendar
     st.link_button("Season Full Schedule", "https://www.formula1.com/en/racing/2024")
