@@ -1,39 +1,23 @@
 # formula1-season-explorer
 
-This README document is a personal note for hobby development purposes. It is intended for future reference when revisiting or updating the project. This document is not designed to instruct or guide a general audience.
+This README serves as a personal reference for hobby development purposes. It is primarily intended for use when revisiting or updating the project. It is not designed to instruct or guide a general audience.
 
-## Environment　Setup
+## Environment Setup
 
-Install required packages with the command: pip install -r requirements.txt.
-
+Install the required packages with the following command: `pip install -r requirements.txt`.
 
 ## Application Architecture
 
-- __Functionality__: The application provides
-  - Predictions for race results.
-  - Circuit layouts via `geo.py`.
-  - Race schedules and previous year results through `ergast_api.py`.
+This application provides statistics and race winner predictions for the weekend Grand Prix.
 
-![app_architecture](assets/app.png)
+- Downloads past results from my AWS S3 bucket.
+  - The AWS S3 data source is updated every Monday via a batch process managed by an AWS Lambda function ([repository](https://github.com/YoshimatsuSaito/formula1-basic-info-saver)).
+- Creates an in-memory database using DuckDB.
+- Generates useful plots to help understand each Grand Prix's features.
+- Predicts race winners using a simple LightGBM model.
+  - The model is trained on historical data from the 2006 to 2022 seasons, using a [notebook](./notebooks/create_model.ipynb). The trained model is stored in an S3 bucket.
+  - The app generates prediction features using the latest data, and the pre-trained model uses these features to predict future race outcomes.
 
-- __Model Training__: A model is trained with historical data spanning from the 1950 to the 2022 season, using a notebook. The trained model is stored in an S3 bucket.
+## Data Source
 
-![train_architecture](assets/train.png)
-
-- __Data Updates__: To minimize app downtime, the latest race results are fetched using a Lambda function triggered by an EventBridge event.
-- __Prediction__: The app utilizes the latest data to predict future race outcomes with the pre-trained model.
-
-![predict_architecture](assets/predict.png)
-
-## Data source
-
-- Circuit layouts: [Geo data](https://github.com/bacinger/f1-circuits/tree/master)
-
-- Historical race data: [Past data on Kaggle](https://www.kaggle.com/datasets/rohanrao/formula-1-world-championship-1950-2020)
-
-- Recent race results (not included in the static dataset) are fetched from [Ergast API](https://ergast.com/mrd/).
-
-
-## TODO
-
-- Due to the scheduled shutdown of the Ergast API at the end of 2024, a new API or data source will be required for the 2025 season onwards.
+- https://www.formula1.com/en/results
