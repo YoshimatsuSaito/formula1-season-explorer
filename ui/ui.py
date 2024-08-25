@@ -316,20 +316,6 @@ def create_q3_marginal_gain_plot(
         & (df["position"].between(-1 * lower_position, -1))
     ]
 
-    slope = (
-        (df["position"] - (-1 * reference_position))
-        .div(df["gap_from_reference_position"])
-        .mean()
-    )
-    intercept = -1 * reference_position - slope * 0
-
-    x_line = np.linspace(
-        min(df["gap_from_reference_position"]),
-        max(df["gap_from_reference_position"]),
-        300,
-    )
-    y_line = slope * x_line + intercept
-
     fig, ax = plt.subplots()
 
     for i in range(0, -1 * (lower_position + 1), -1):
@@ -337,18 +323,9 @@ def create_q3_marginal_gain_plot(
     for i in np.arange(-2, 2.1, 0.1):
         ax.axvline(x=i, alpha=0.3, color="gray", ls="--", lw=1)
 
-    sns.lineplot(
-        x=x_line,
-        y=y_line,
-        color="red",
-        ax=ax,
-        linestyle="-",
-        label=f"Fitted Line ({df['season'].min()} - {df['season'].max()})",
-    )
-
     for idx, (season, group) in enumerate(df.groupby("season")):
         if season == df["season"].max():
-            label = (f"Most Recent Session ({season})",)
+            label = f"Most Recent Session ({season})"
             color = "skyblue"
             alpha = 1
         else:
@@ -381,9 +358,7 @@ def create_q3_marginal_gain_plot(
     ax.set_xlim(-2, 0.1)
     ax.set_ylim(-1 * (lower_position + 1), 0)
 
-    ax.set_title(
-        f"Impact of 0.1 Second Gain/Loss Around Pole Position: Change of {(slope/10):.2f} Positions"
-    )
+    ax.set_title("")
     ax.legend(loc="upper left")
 
     plt.tight_layout()
@@ -457,7 +432,7 @@ def create_fastest_lap_plot(_db: InmemoryDB, grandprix: str) -> Figure:
         linestyle="-",
     )
     ax.set_xlabel("Year", fontsize=14)
-    ax.set_ylabel("Lap Time (Seconds)", fontsize=14)
+    ax.set_ylabel("Seconds", fontsize=14)
     ax.set_xticks(df["season"])
     ax.set_xticklabels(df["season"], rotation=45)
 
@@ -493,8 +468,8 @@ def create_fastest_lap_timing_plot(_db: InmemoryDB, grandprix: str) -> Figure:
 
     fig, ax = plt.subplots()
     sns.histplot(data=df, x="lap", color="skyblue", ax=ax, bins=40)
-    ax.set_xlabel("Lap", fontsize=14)
-    ax.set_ylabel("Frequency", fontsize=14)
+    ax.set_xlabel("Lap Number", fontsize=14)
+    ax.set_ylabel("Number of Fastest Laps Recorded", fontsize=14)
 
     plt.tight_layout()
 
@@ -596,7 +571,7 @@ def create_pit_stop_count_plot(_db: InmemoryDB, grandprix: str) -> Figure:
             ax=ax,
         )
         bottom += df_pit_stop_percentage[column]
-    ax.set_ylabel("Percentage", fontsize=14)
+    ax.set_ylabel("Pit Stop Strategy Distribution (%)", fontsize=14)
     ax.set_xlabel("Year", fontsize=14)
 
     handles, labels = plt.gca().get_legend_handles_labels()
@@ -631,7 +606,7 @@ def create_first_pit_stop_timing_plot(_db: InmemoryDB, grandprix: str) -> Figure
         ax=ax,
     )
     ax.set_xlabel("Lap Number", fontsize=14)
-    ax.set_ylabel("Frequency", fontsize=14)
+    ax.set_ylabel("Number of First Pit Stops", fontsize=14)
     plt.tight_layout()
 
     return fig
@@ -672,20 +647,21 @@ def create_probability_from_each_grid_plots(
     df_win_rates_from_each_grid = (
         df_win_counts_from_each_grid / df_total_counts_of_each_grid
     ).reset_index()
-    df_win_rates_from_each_grid.columns = ["grid_position", "win_rate"]
+    df_win_rates_from_each_grid.columns = ["grid_position", "win_percentage"]
+    df_win_rates_from_each_grid["win_percentage"] = df_win_rates_from_each_grid["win_percentage"] * 100
 
     fig1, ax1 = plt.subplots()
     sns.barplot(
         x="grid_position",
-        y="win_rate",
+        y="win_percentage",
         data=df_win_rates_from_each_grid,
         color="skyblue",
         ax=ax1,
     )
-    ax1.set_ylim([0, 1])
-    ax1.set_xlabel("Grid position")
-    ax1.set_ylabel("Proportion")
-    ax1.set_title("Winning rate")
+    ax1.set_ylim([0, 100])
+    ax1.set_xlabel("Starting Grid Position")
+    ax1.set_ylabel("Winning Percentage (%)")
+    ax1.set_title("Winning Probability by Starting Grid")
     plt.tight_layout()
 
     # Podium probability
@@ -695,20 +671,21 @@ def create_probability_from_each_grid_plots(
     df_podium_rates_from_each_grid = (
         df_podium_counts_from_each_grid / df_total_counts_of_each_grid
     ).reset_index()
-    df_podium_rates_from_each_grid.columns = ["grid_position", "podium_rate"]
+    df_podium_rates_from_each_grid.columns = ["grid_position", "podium_percentage"]
+    df_podium_rates_from_each_grid["podium_percentage"] = df_podium_rates_from_each_grid["podium_percentage"] * 100
 
     fig2, ax2 = plt.subplots()
     sns.barplot(
         x="grid_position",
-        y="podium_rate",
+        y="podium_percentage",
         data=df_podium_rates_from_each_grid,
         color="skyblue",
         ax=ax2,
     )
-    ax2.set_ylim([0, 1])
-    ax2.set_xlabel("Grid position")
-    ax2.set_ylabel("Proportion")
-    ax2.set_title("Podium rate")
+    ax2.set_ylim([0, 100])
+    ax2.set_xlabel("Starting Grid position")
+    ax2.set_ylabel("Podium Finish Percentage (%)")
+    ax2.set_title("Podium Probability by Starting Grid")
     plt.tight_layout()
 
     # Point probability
@@ -718,20 +695,21 @@ def create_probability_from_each_grid_plots(
     df_point_rates_from_each_grid = (
         df_point_counts_from_each_grid / df_total_counts_of_each_grid
     ).reset_index()
-    df_point_rates_from_each_grid.columns = ["grid_position", "point_rate"]
+    df_point_rates_from_each_grid.columns = ["grid_position", "point_percentage"]
+    df_point_rates_from_each_grid["point_percentage"] = df_point_rates_from_each_grid["point_percentage"] * 100
 
     fig3, ax3 = plt.subplots()
     sns.barplot(
         x="grid_position",
-        y="point_rate",
+        y="point_percentage",
         data=df_point_rates_from_each_grid,
         color="skyblue",
         ax=ax3,
     )
-    ax3.set_ylim([0, 1])
-    ax3.set_xlabel("Grid position")
-    ax3.set_ylabel("Proportion")
-    ax3.set_title("Point positions rate")
+    ax3.set_ylim([0, 100])
+    ax3.set_xlabel("Starting Grid position")
+    ax3.set_ylabel("Points Finish Percentage (%)")
+    ax3.set_title("Points Finish Percentage (%)")
     plt.tight_layout()
 
     return fig1, fig2, fig3
@@ -741,15 +719,15 @@ def create_probability_from_each_grid_plots(
 def create_completion_ratio_plot(
     _db: InmemoryDB, grandprix: str, ser_grandprix_this_season: pd.Series
 ) -> Figure:
-    """Create completion ratio time"""
+    """Create Finish Ratio time"""
 
     def completion_ratio(group) -> float:
-        """Completion ratio for each group"""
+        """Finish Ratio for each group"""
         total_count = len(group)
         none_count = group.isnull().sum()
         return (total_count - none_count) / total_count
 
-    # Detect completion ratio by position columns (None means DNF etc)
+    # Detect Finish Ratio by position columns (None means DNF etc)
     query = """
         SELECT
             season,
@@ -775,8 +753,8 @@ def create_completion_ratio_plot(
         ax=ax,
         palette=colors,
     )
-    ax.set_xlabel("Completion ratio")
-    ax.set_ylabel("Grandprix")
+    ax.set_xlabel("Finish Ratio")
+    ax.set_ylabel("Grand Prix")
 
     plt.tight_layout()
 
@@ -806,7 +784,7 @@ def create_race_time_plot(_db: InmemoryDB, grandprix: str) -> Figure:
         linestyle="-",
     )
     ax.set_xlabel("Year", fontsize=14)
-    ax.set_ylabel("minutes", fontsize=14)
+    ax.set_ylabel("Minutes", fontsize=14)
     ax.set_xticks(df["season"])
     ax.set_xticklabels(df["season"], rotation=45)
 
@@ -881,7 +859,7 @@ def create_driver_past_race_result_plot(
         columns={"teammate": "driver", "position_teammate": "position"},
         inplace=True,
     )
-    df_teammate["driver"] = "teammate"
+    df_teammate["driver"] = "Teammate"
     df_concat = pd.concat([df_driver, df_teammate]).reset_index()
 
     sns.lineplot(
@@ -890,13 +868,13 @@ def create_driver_past_race_result_plot(
         y="position",
         hue="driver",
         marker="o",
-        palette={"Self": "skyblue", "teammate": "gray"},
+        palette={"Self": "skyblue", "Teammate": "gray"},
         ax=ax,
         linestyle="-",
     )
     ax.set_xlabel("")
     ax.set_ylim(0, _DRIVER_NUM_CONSTANT)
-    ax.set_ylabel("position", fontsize=14)
+    ax.set_ylabel("Finish Position", fontsize=14)
     ax.set_xticks(df["season"])
     ax.set_xticklabels(df["season"], rotation=45)
     ax.set_yticks(range(0, _DRIVER_NUM_CONSTANT + 1))
@@ -994,7 +972,7 @@ def create_driver_past_qualify_result_plot(
         columns={"teammate": "driver", "position_teammate": "position"},
         inplace=True,
     )
-    df_teammate["driver"] = "teammate"
+    df_teammate["driver"] = "Teammate"
     df_concat = pd.concat([df_driver, df_teammate]).reset_index()
 
     sns.lineplot(
@@ -1003,13 +981,13 @@ def create_driver_past_qualify_result_plot(
         y="position",
         hue="driver",
         marker="o",
-        palette={"Self": "skyblue", "teammate": "gray"},
+        palette={"Self": "skyblue", "Teammate": "gray"},
         ax=ax,
         linestyle="-",
     )
     ax.set_xlabel("")
     ax.set_ylim(0, _DRIVER_NUM_CONSTANT)
-    ax.set_ylabel("position", fontsize=14)
+    ax.set_ylabel("Qualifying Position", fontsize=14)
     ax.set_xticks(df["season"])
     ax.set_xticklabels(df["season"], rotation=45)
     ax.set_yticks(range(0, len(df_driver_points) + 1))

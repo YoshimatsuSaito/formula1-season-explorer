@@ -22,5 +22,8 @@ This application provides statistics and race winner predictions for the weekend
 
 ## TODO
 
-- Modify statistics to allow comparison of results from different grid positions across multiple Grand Prix.
-- Analyze and display each driver's recent form.
+- グリッドに関する集計をグランプリ間で比較できるように修正
+- 直近数戦の各ドライバーの勢いに関する集計（直近何戦の獲得ポイント比較、ポイント獲得量の傾きなど）
+- 予選タイムの接戦度合いの曲線について、グランプリ間で比較できるように修正(ポールと2位のタイム差の中央値比較とかでも良い）
+- 各グリッドから、何位くらいまでのレンジでフィニッシュするのかについてのグラフ（レンジや分布を何かしら工夫して見せられれば）
+- チームメイトとの差（予選タイム）を秒数で示す図の追加
