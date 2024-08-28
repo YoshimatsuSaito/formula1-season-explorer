@@ -149,7 +149,7 @@ df_driver = _cached_df_driver(_db=db)
 
 # Show page title and circuit layout
 st.header(f"{SEASON} Round {round_to_show}: {grandprix_to_show}")
-st.markdown(f"This page provides various information about the {round_to_show} Grand Prix, as well as current standings and statistics for the {SEASON} season.")
+st.markdown(f"This page provides various information about the {grandprix_to_show} Grand Prix, as well as current standings and statistics for the {SEASON} season.")
 
 page = st.radio(
     "",
