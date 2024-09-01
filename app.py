@@ -40,6 +40,7 @@ from ui.race import (
     create_race_top3_table,
 )
 from ui.sidebar import get_round_grandprix_from_sidebar
+from ui.standings import create_driver_standings_plot
 from ui.winner_prediction import create_winner_prediction_plot
 
 load_dotenv()
@@ -94,7 +95,6 @@ def _cached_winner_prediction_result(
     season: int,
     round_to_show: int,
 ) -> pd.DataFrame:
-
     df = model_input_data.df.copy()
     df = df.loc[(df["season"] == season) & (df["round"] == round_to_show)]
     X = df[model_input_data.list_col_X]
@@ -110,6 +110,7 @@ def _cached_inmemory_db() -> InmemoryDB:
     db = InmemoryDB(bucket_name=BUCKET_NAME)
     db.create_inmemory_db(dict_csv_key=DICT_CONFIG["s3_grandprix_result_data_key"])
     return db
+
 
 @st.cache_data(ttl=60 * 60, show_spinner=True)
 def _cached_df_driver(_db: InmemoryDB) -> pd.DataFrame:
@@ -154,13 +155,22 @@ df_driver = _cached_df_driver(_db=db)
 
 # Show page title and circuit layout
 st.header(f"{SEASON} Round {round_to_show}: {grandprix_to_show}")
-st.markdown(f"This page provides various information about the {grandprix_to_show} Grand Prix, as well as current standings and statistics for the {SEASON} season.")
+st.markdown(
+    f"This page provides various information about the {grandprix_to_show} Grand Prix, as well as current standings and statistics for the {SEASON} season."
+)
 
 page = st.radio(
     "Select the type of information to display",
-    ["Grand Prix", "Drivers", "Prediction", "Custom Search", "Miscellaneous"],
+    [
+        "Grand Prix",
+        "Drivers",
+        "Prediction",
+        "Standings",
+        "Custom Search",
+        "Miscellaneous",
+    ],
     index=0,
-    horizontal=True
+    horizontal=True,
 )
 
 st.markdown("---")
@@ -294,8 +304,15 @@ if page == "Grand Prix":
 
 if page == "Drivers":
     st.subheader("Driver Statistics")
-    driver_abbreviation = st.radio("Select a Driver", df_driver["driver_abbreviation"].tolist(), index=0, horizontal=True)
-    driver = df_driver.loc[df_driver["driver_abbreviation"]==driver_abbreviation, "driver"].iloc[0]
+    driver_abbreviation = st.radio(
+        "Select a Driver",
+        df_driver["driver_abbreviation"].tolist(),
+        index=0,
+        horizontal=True,
+    )
+    driver = df_driver.loc[
+        df_driver["driver_abbreviation"] == driver_abbreviation, "driver"
+    ].iloc[0]
 
     st.markdown("#### Past Qualifying Results")
     fig_past_qualify_performance = create_driver_past_qualify_result_plot(
@@ -328,6 +345,26 @@ if page == "Prediction":
         df_winner_prediction_result=df_winner_prediction_result
     )
     st.pyplot(fig_pred)
+
+if page == "Standings":
+    st.markdown(f"### Points Standings for the {SEASON} Season")
+    fig_wdc_standings = create_driver_standings_plot(
+        _db=db, season=SEASON, df_calendar=df_calendar, projection_flag=False
+    )
+    fig_wdc_standings_projection = create_driver_standings_plot(
+        _db=db, season=SEASON, df_calendar=df_calendar, projection_flag=True
+    )
+
+    show_projection = st.radio(
+        "Display Season End Projection Based on Recent 3 Races",
+        options=["Off", "On"],
+        index=0,
+        horizontal=True,
+    )
+    if show_projection == "Off":
+        st.pyplot(fig_wdc_standings)
+    elif show_projection == "On":
+        st.pyplot(fig_wdc_standings_projection)
 
 if page == "Custom Search":
     st.markdown("### Custom Statistics Search")

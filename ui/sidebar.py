@@ -41,5 +41,3 @@ def plot_circuit(array_geo: np.array) -> Figure:
     ax.set_xlabel("")
     ax.set_ylabel("")
     return fig
-
-

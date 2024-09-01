@@ -33,7 +33,6 @@ def create_qualify_top3_table(_db: InmemoryDB, grandprix: str) -> pd.DataFrame:
     return df
 
 
-
 @st.cache_resource(ttl=60 * 10)
 def create_pole_position_time_plot(_db: InmemoryDB, grandprix: str) -> Figure:
     """Create Pole Position Time Plot"""

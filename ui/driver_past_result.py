@@ -209,7 +209,6 @@ def create_driver_past_race_result_plot(
     return fig
 
 
-
 @st.cache_resource(ttl=60 * 10)
 def create_drivers_point_plot(
     _db: InmemoryDB, season: int, driver_target: str
@@ -224,7 +223,7 @@ def create_drivers_point_plot(
             r.round,
             COALESCE(r.points, 0) + COALESCE(s.points, 0) AS points
         FROM 
-            race_result　AS r
+            race_result AS r
         LEFT JOIN
             sprint AS s
         ON
@@ -317,4 +316,3 @@ def create_drivers_point_plot(
 
     plt.tight_layout()
     return fig
-

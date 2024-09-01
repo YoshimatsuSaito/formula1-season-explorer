@@ -42,7 +42,9 @@ def create_probability_from_each_grid_plots(
         df_win_counts_from_each_grid / df_total_counts_of_each_grid
     ).reset_index()
     df_win_rates_from_each_grid.columns = ["grid_position", "win_percentage"]
-    df_win_rates_from_each_grid["win_percentage"] = df_win_rates_from_each_grid["win_percentage"] * 100
+    df_win_rates_from_each_grid["win_percentage"] = (
+        df_win_rates_from_each_grid["win_percentage"] * 100
+    )
 
     fig1, ax1 = plt.subplots()
     sns.barplot(
@@ -66,7 +68,9 @@ def create_probability_from_each_grid_plots(
         df_podium_counts_from_each_grid / df_total_counts_of_each_grid
     ).reset_index()
     df_podium_rates_from_each_grid.columns = ["grid_position", "podium_percentage"]
-    df_podium_rates_from_each_grid["podium_percentage"] = df_podium_rates_from_each_grid["podium_percentage"] * 100
+    df_podium_rates_from_each_grid["podium_percentage"] = (
+        df_podium_rates_from_each_grid["podium_percentage"] * 100
+    )
 
     fig2, ax2 = plt.subplots()
     sns.barplot(
@@ -90,7 +94,9 @@ def create_probability_from_each_grid_plots(
         df_point_counts_from_each_grid / df_total_counts_of_each_grid
     ).reset_index()
     df_point_rates_from_each_grid.columns = ["grid_position", "point_percentage"]
-    df_point_rates_from_each_grid["point_percentage"] = df_point_rates_from_each_grid["point_percentage"] * 100
+    df_point_rates_from_each_grid["point_percentage"] = (
+        df_point_rates_from_each_grid["point_percentage"] * 100
+    )
 
     fig3, ax3 = plt.subplots()
     sns.barplot(
@@ -107,4 +113,3 @@ def create_probability_from_each_grid_plots(
     plt.tight_layout()
 
     return fig1, fig2, fig3
-

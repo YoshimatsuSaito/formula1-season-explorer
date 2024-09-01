@@ -31,9 +31,6 @@ def create_race_top3_table(_db: InmemoryDB, grandprix: str) -> pd.DataFrame:
     return df
 
 
-
-
-
 @st.cache_resource(ttl=60 * 10)
 def create_completion_ratio_plot(
     _db: InmemoryDB, grandprix: str, ser_grandprix_this_season: pd.Series
@@ -120,4 +117,3 @@ def create_race_time_plot(_db: InmemoryDB, grandprix: str) -> Figure:
     plt.tight_layout()
 
     return fig
-
