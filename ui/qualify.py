@@ -232,6 +232,8 @@ def create_q3_marginal_gain_plot(
             {q_session}_sec ASC
     """
     df = _db.execute_query(query)
+    df.dropna(inplace=True)
+    df.reset_index(drop=True, inplace=True)
 
     def calculate_differences(group):
         base_time = group[group["position"] == -1 * reference_position][
