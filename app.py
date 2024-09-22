@@ -187,11 +187,6 @@ if page == "Grand Prix":
     )
 
     if genre == "Qualifying":
-        ## Past Top 3 Qualifiers
-        st.markdown("#### Past Top 3 Drivers")
-        df = create_qualify_top3_table(_db=db, grandprix=grandprix_to_show)
-        st.dataframe(df)
-
         ## Pole Position Time
         st.markdown("#### Pole Position Time")
         fig_pole = create_pole_position_time_plot(_db=db, grandprix=grandprix_to_show)
@@ -237,6 +232,11 @@ if page == "Grand Prix":
         )
         st.pyplot(fig_q_diff)
 
+        ## Past Top 3 Qualifiers
+        st.markdown("#### Past Top 3 Drivers")
+        df = create_qualify_top3_table(_db=db, grandprix=grandprix_to_show)
+        st.dataframe(df)
+
     if genre == "Grid":
         ## Winning Probability from Each Grid
         st.markdown("#### Result Probabilities by Starting Grid")
@@ -248,11 +248,6 @@ if page == "Grand Prix":
         st.pyplot(fig_point_prob)
 
     if genre == "Race":
-        ## Past Top 3 Finishers
-        st.markdown("#### Past Top 3 Drivers")
-        df = create_race_top3_table(_db=db, grandprix=grandprix_to_show)
-        st.dataframe(df)
-
         ### Finish Ratio
         st.markdown("#### Finish Ratio")
         fig_completion_ratio = create_completion_ratio_plot(
@@ -266,6 +261,11 @@ if page == "Grand Prix":
         st.markdown("#### Race Duration")
         fig_race_time = create_race_time_plot(_db=db, grandprix=grandprix_to_show)
         st.pyplot(fig_race_time)
+
+        ## Past Top 3 Finishers
+        st.markdown("#### Past Top 3 Drivers")
+        df = create_race_top3_table(_db=db, grandprix=grandprix_to_show)
+        st.dataframe(df)
 
     if genre == "Pit Stops":
         ## Pit Stop Frequency
@@ -348,23 +348,21 @@ if page == "Prediction":
 
 if page == "Standings":
     st.markdown(f"### Points Standings for the {SEASON} Season")
-    fig_wdc_standings = create_driver_standings_plot(
-        _db=db, season=SEASON, df_calendar=df_calendar, projection_flag=False
-    )
-    fig_wdc_standings_projection = create_driver_standings_plot(
-        _db=db, season=SEASON, df_calendar=df_calendar, projection_flag=True
-    )
 
-    show_projection = st.radio(
-        "Display Season End Projection Based on Recent 3 Races",
-        options=["Off", "On"],
+    projection_num = st.radio(
+        "Number of Races for Season End Projection",
+        options=[0, 1, 2, 3, 4, 5],
         index=0,
         horizontal=True,
     )
-    if show_projection == "Off":
-        st.pyplot(fig_wdc_standings)
-    elif show_projection == "On":
-        st.pyplot(fig_wdc_standings_projection)
+
+    fig_standings = create_driver_standings_plot(
+        _db=db,
+        season=SEASON,
+        df_calendar=df_calendar,
+        num_for_projection=projection_num,
+    )
+    st.pyplot(fig_standings)
 
 if page == "Custom Search":
     st.markdown("### Custom Statistics Search")

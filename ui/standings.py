@@ -12,7 +12,7 @@ def create_driver_standings_plot(
     _db: InmemoryDB,
     season: int,
     df_calendar: pd.DataFrame,
-    projection_flag: bool = False,
+    num_for_projection: int,
 ) -> Figure:
     """Create drivers point plot"""
 
@@ -42,8 +42,8 @@ def create_driver_standings_plot(
     df = _db.execute_query(query)
 
     # Create simple future projection
-    recent_rounds = df["round"].unique()[-3:]
-    if projection_flag:
+    recent_rounds = df["round"].unique()[-num_for_projection:]
+    if num_for_projection > 0:
         df_recent_result = df[df["round"].isin(recent_rounds)]
         df_recent_avg_point = (
             df_recent_result.groupby(["driver", "driver_abbreviation"])["points"]
@@ -59,6 +59,8 @@ def create_driver_standings_plot(
         df = pd.concat([df, df_future_projection])
 
     df["total_point_at_each_round"] = df.groupby(["driver"])["points"].cumsum()
+    df["total_point_at_each_round"] = df["total_point_at_each_round"].round(0)
+    df["total_point_at_each_round"] = df["total_point_at_each_round"].astype(int)
 
     fig, ax = plt.subplots(nrows=2, ncols=1, figsize=(10, 5 * 2))
     df_driver_rank_sort = df.loc[
