@@ -35,7 +35,7 @@ def create_race_top3_table(_db: InmemoryDB, grandprix: str) -> pd.DataFrame:
 def create_completion_ratio_plot(
     _db: InmemoryDB, grandprix: str, ser_grandprix_this_season: pd.Series
 ) -> Figure:
-    """Create Finish Ratio time"""
+    """Create Finish Ratio plot"""
 
     def completion_ratio(group) -> float:
         """Finish Ratio for each group"""
