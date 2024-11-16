@@ -8,6 +8,9 @@ s3_grandprix_result_data_key:
   "qualify": "data/qualify.csv"
   "pit_stop": "data/pit_stop.csv"
   "sprint": "data/sprint.csv"
+  "practice1": "data/practice1.csv"
+  "practice2": "data/practice2.csv"
+  "practice3": "data/practice3.csv"
 
 gp_circuits:
   "Bahrain": "bh-2002.geojson"

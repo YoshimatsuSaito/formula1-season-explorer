@@ -13,3 +13,4 @@ shap
 streamlit
 tqdm
 PyYAML
+statsmodels

@@ -27,6 +27,7 @@ from ui.fastest_lap import (
 )
 from ui.grid import create_probability_from_each_grid_plots
 from ui.pit_stop import create_first_pit_stop_timing_plot, create_pit_stop_count_plot
+from ui.practice import create_practice_race_relation_plot
 from ui.qualify import (
     create_pole_position_time_plot,
     create_q3_marginal_gain_plot,
@@ -181,10 +182,16 @@ if page == "Grand Prix":
 
     genre = st.radio(
         "Select Data Type",
-        ["Qualifying", "Grid", "Race", "Pit Stops", "Fastest Laps"],
+        ["Practice", "Qualifying", "Grid", "Race", "Pit Stops", "Fastest Laps"],
         index=0,
         horizontal=True,
     )
+
+    if genre == "Practice":
+        ## Relation between practice and race
+        st.markdown("#### Relation between Practice and Race Result")
+        fig_practice = create_practice_race_relation_plot(_db=db, grandprix=grandprix_to_show)
+        st.pyplot(fig_practice)
 
     if genre == "Qualifying":
         ## Pole Position Time
