@@ -111,6 +111,109 @@ def create_practice_race_relation_plot(
 
 
 @st.cache_resource(ttl=60 * 10)
+def create_practice_qualify_relation_plot(
+    _db: InmemoryDB, grandprix: str
+) -> tuple[Figure, Figure, Figure]:
+    """Create relation between practice position and qualify result"""
+
+    query = f"""
+        SELECT
+            practice1.season,
+            practice1.driver,
+            practice1.position AS practice_position,
+            qualifying.position AS qualifying_position,
+            1 AS practice
+        FROM
+            practice1
+        JOIN
+            qualifying
+        ON
+            practice1.season = qualifying.season
+            AND practice1.driver = qualifying.driver
+        WHERE
+            practice1.grandprix = '{grandprix}'
+            AND qualifying.grandprix = '{grandprix}'
+
+        UNION ALL
+
+        SELECT
+            practice2.season,
+            practice2.driver,
+            practice2.position AS practice_position,
+            qualifying.position AS qualifying_position,
+            2 AS practice
+        FROM
+            practice2
+        JOIN
+            qualifying
+        ON
+            practice2.season = qualifying.season
+            AND practice2.driver = qualifying.driver
+        WHERE
+            practice2.grandprix = '{grandprix}'
+            AND qualifying.grandprix = '{grandprix}'
+
+        UNION ALL
+
+        SELECT
+            practice3.season,
+            practice3.driver,
+            practice3.position AS practice_position,
+            qualifying.position AS qualifying_position,
+            3 AS practice
+        FROM
+            practice3
+        JOIN
+            qualifying
+        ON
+            practice3.season = qualifying.season
+            AND practice3.driver = qualifying.driver
+        WHERE
+            practice3.grandprix = '{grandprix}'
+            AND qualifying.grandprix = '{grandprix}'
+
+        ORDER BY
+            season,
+            practice,
+            practice_position;
+    """
+
+    df = _db.execute_query(query)
+
+    fig, ax = plt.subplots()
+    palette = sns.color_palette("cool", 3)
+    for practice_num in range(1, 4):
+        sns.lineplot(
+            data=df.loc[df["practice"] == practice_num],
+            x="practice_position",
+            y="qualifying_position",
+            ax=ax,
+            color=palette[practice_num - 1],
+            estimator="median",
+            errorbar=("ci", 50),
+            label=f"Practice {practice_num}",
+        )
+    ax.set_xlim(0.5, 20.5)
+    ax.set_ylim(0.5, 20.5)
+    ax.set_yticks(range(1, 21))
+    ax.set_xticks(range(1, 21))
+    ax.set_xlabel("Practice Position", fontsize=14)
+    ax.set_ylabel("Qualifying Position", fontsize=14)
+    ax.invert_xaxis()
+    ax.invert_yaxis()
+
+    handles, labels = ax.get_legend_handles_labels()
+    labels.append("Line: median, Fill: CI (50%)")
+    handles.append(plt.Line2D([0], [0], color="gray", linestyle="-", linewidth=2))
+
+    ax.legend(handles, labels, loc="lower right", frameon=True)
+
+    plt.tight_layout()
+
+    return fig
+
+
+@st.cache_resource(ttl=60 * 10)
 def create_practice_race_correlation_comparison_plot(
     _db: InmemoryDB, grandprix: str, ser_grandprix_this_season: pd.Series
 ) -> Figure:

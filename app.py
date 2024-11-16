@@ -28,8 +28,9 @@ from ui.fastest_lap import (
 from ui.grid import create_probability_from_each_grid_plots
 from ui.pit_stop import create_first_pit_stop_timing_plot, create_pit_stop_count_plot
 from ui.practice import (
-    create_practice_race_relation_plot,
+    create_practice_qualify_relation_plot,
     create_practice_race_correlation_comparison_plot,
+    create_practice_race_relation_plot,
 )
 from ui.qualify import (
     create_pole_position_time_plot,
@@ -191,12 +192,19 @@ if page == "Grand Prix":
     )
 
     if genre == "Practice":
-        ## Relation between practice and race
-        st.markdown("#### Relation between Practice and Race Result")
-        fig_practice = create_practice_race_relation_plot(
+        ## Relation between practice and qualifying
+        st.markdown("#### Relation between Practice and Qualifying")
+        fig_practice_qualify = create_practice_qualify_relation_plot(
             _db=db, grandprix=grandprix_to_show
         )
-        st.pyplot(fig_practice)
+        st.pyplot(fig_practice_qualify)
+
+        ## Relation between practice and race
+        st.markdown("#### Relation between Practice and Race Result")
+        fig_practice_race = create_practice_race_relation_plot(
+            _db=db, grandprix=grandprix_to_show
+        )
+        st.pyplot(fig_practice_race)
 
         ## Comparison across Grandprix
         st.markdown("#### Comparison of Correlation Coefficients Between Grand Prix")
