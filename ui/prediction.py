@@ -20,7 +20,7 @@ def create_winner_prediction_plot(df_winner_prediction: pd.DataFrame) -> None:
 
     for _, row in df.iterrows():
         st.metric(
-            label=f"{round(row["y_pred_winner"] * 100, 2)} % to win",
+            label=f"{round(row['y_pred_winner'] * 100, 2)} % to win",
             value=row["driver"],
         )
 
