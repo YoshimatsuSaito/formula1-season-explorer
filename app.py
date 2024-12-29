@@ -384,11 +384,15 @@ if page == "Prediction":
     )
 
     st.markdown("### Race Winner Prediction")
-    st.caption("Shows only the drivers who rated higher than 0.5")
-    fig_pred_winner = create_winner_prediction_plot(df_prediction)
-    st.pyplot(fig_pred_winner)
+    st.caption("Shows only the drivers whose prediction probability is over 50%")
+    create_winner_prediction_plot(df_prediction)
+
+    st.markdown("---")
 
     st.markdown("### Race Position Prediction")
+    st.caption(
+        "Prediction could be diffrent from race winner prediction because each model is build by different algorithm."
+    )
     create_position_prediction_plot(df_prediction, _db=db)
 
 if page == "Standings":
