@@ -6,9 +6,8 @@ from dotenv import load_dotenv
 
 from modules.inmemory_db import InmemoryDB
 from modules.load_csv_data import load_csv_data
-from modules.model import Classifier
+from modules.model import Classifier, Ranker
 from modules.preprocess import (
-    ModelInputData,
     add_features,
     add_future_race_row,
     make_datamart,
@@ -46,7 +45,7 @@ from ui.race import (
 )
 from ui.sidebar import get_round_grandprix_from_sidebar
 from ui.standings import create_driver_standings_plot
-from ui.winner_prediction import create_winner_prediction_plot
+from ui.prediction import create_winner_prediction_plot, create_position_prediction_plot
 
 load_dotenv()
 
@@ -70,15 +69,14 @@ def _cached_calendar() -> pd.DataFrame:
 
 
 @st.cache_data(ttl=60 * 60, show_spinner=True)
-def _cached_make_model_input_data(df_calendar: pd.DataFrame) -> pd.DataFrame:
+def _cached_make_features(df_calendar: pd.DataFrame) -> pd.DataFrame:
     # Make datamart from past result
     df = make_datamart(bucket_name=BUCKET_NAME)
     # Add future race rows to datamart
     df = add_future_race_row(df_datamart=df, df_calendar=df_calendar)
     # Make features to predict
     df = add_features(df)
-    model_input_data = ModelInputData(df=df)
-    return model_input_data
+    return df
 
 
 @st.cache_resource(ttl=60 * 60 * 24, show_spinner=True)
@@ -93,19 +91,34 @@ def _cached_classifier() -> Classifier:
     return classifier
 
 
+@st.cache_resource(ttl=60 * 60 * 24, show_spinner=True)
+def _cached_ranker() -> Ranker:
+    ranker = Ranker(
+        bucket_name=BUCKET_NAME,
+        aws_access_key_id=AWS_ACCESS_KEY_ID,
+        aws_secret_access_key=AWS_SECRET_ACCESS_KEY,
+        s3_model_key=DICT_CONFIG["s3_model_key"],
+    )
+    ranker.load_model()
+    return ranker
+
+
 @st.cache_data(ttl=60 * 60, show_spinner=True)
-def _cached_winner_prediction_result(
-    model_input_data: ModelInputData,
+def _cached_prediction_result(
+    df_features: pd.DataFrame,
     _classifier: Classifier,
+    _ranker: Ranker,
     season: int,
     round_to_show: int,
 ) -> pd.DataFrame:
-    df = model_input_data.df.copy()
+    df = df_features.copy()
     df = df.loc[(df["season"] == season) & (df["round"] == round_to_show)]
-    X = df[model_input_data.list_col_X]
-    y_pred = _classifier.predict(X)
-    df["y_pred"] = y_pred
-    df.sort_values(by="y_pred", ascending=False, inplace=True)
+    X = df[_classifier.list_feature]
+    y_pred_winner = _classifier.predict(X)
+    y_pred_position = _ranker.predict(X)
+
+    df["y_pred_winner"] = y_pred_winner
+    df["y_pred_position"] = y_pred_position
 
     return df
 
@@ -363,17 +376,20 @@ if page == "Drivers":
     st.pyplot(fig_point_standings)
 
 if page == "Prediction":
-    st.markdown("### Race Winner Prediction")
-    # Show race prediction
-    model_input_data = _cached_make_model_input_data(df_calendar=df_calendar)
+    df_features = _cached_make_features(df_calendar=df_calendar)
     classifier = _cached_classifier()
-    df_winner_prediction_result = _cached_winner_prediction_result(
-        model_input_data, classifier, SEASON, round_to_show
+    ranker = _cached_ranker()
+    df_prediction = _cached_prediction_result(
+        df_features, classifier, ranker, SEASON, round_to_show
     )
-    fig_pred = create_winner_prediction_plot(
-        df_winner_prediction_result=df_winner_prediction_result
-    )
-    st.pyplot(fig_pred)
+
+    st.markdown("### Race Winner Prediction")
+    st.caption("Shows only the drivers who rated higher than 0.5")
+    fig_pred_winner = create_winner_prediction_plot(df_prediction)
+    st.pyplot(fig_pred_winner)
+
+    st.markdown("### Race Position Prediction")
+    create_position_prediction_plot(df_prediction, _db=db)
 
 if page == "Standings":
     st.markdown(f"### Points Standings for the {SEASON} Season")

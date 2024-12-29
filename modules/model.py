@@ -30,6 +30,7 @@ class Classifier:
             aws_secret_access_key=self.aws_secret_access_key,
         )
         self.model = None
+        self.list_feature = None
 
     def load_model(self, model_name: str = "classifier.pkl") -> None:
         """Load model from S3"""
@@ -39,6 +40,7 @@ class Classifier:
         body = obj["Body"].read()
         model_stream = BytesIO(body)
         self.model = joblib.load(model_stream)
+        self.list_feature = self.model.feature_name_
 
     def predict(self, X: pd.DataFrame) -> np.ndarray:
         """Predict winning probability"""
@@ -47,9 +49,9 @@ class Classifier:
     def train(
         self,
         X_train: pd.DataFrame,
-        X_test: pd.DataFrame,
+        X_val: pd.DataFrame,
         y_train: pd.Series,
-        y_test: pd.Series,
+        y_val: pd.Series,
     ) -> None:
         """Train model"""
         self.model = LGBMClassifier(
@@ -61,7 +63,7 @@ class Classifier:
         self.model.fit(
             X_train,
             y_train,
-            eval_set=[(X_test, y_test)],
+            eval_set=[(X_val, y_val)],
             callbacks=[lgb.early_stopping(20, verbose=1), lgb.log_evaluation(period=0)],
         )
 
@@ -130,11 +132,11 @@ class Ranker:
     def train(
         self,
         X_train: pd.DataFrame,
-        X_test: pd.DataFrame,
+        X_val: pd.DataFrame,
         y_train: pd.Series,
-        y_test: pd.Series,
+        y_val: pd.Series,
         query_train: np.ndarray,
-        query_test: np.ndarray,
+        query_val: np.ndarray,
     ) -> None:
         """Train model"""
         self.model = LGBMRanker(
@@ -146,9 +148,9 @@ class Ranker:
             X_train,
             y_train,
             group=query_train,
-            eval_set=[(X_test, y_test)],
-            eval_group=[query_test],
-            eval_at=[1, 3, 10],
+            eval_set=[(X_val, y_val)],
+            eval_group=[query_val],
+            eval_at=[3, 10],
             callbacks=[lgb.early_stopping(20, verbose=1), lgb.log_evaluation(period=0)],
         )
 

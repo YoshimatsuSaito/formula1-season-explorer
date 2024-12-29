@@ -4,25 +4,8 @@ import pandas as pd
 
 from .load_csv_data import load_csv_data
 
-
-@dataclass
-class ModelInputData:
-    """Data for model input"""
-
-    df: pd.DataFrame
-    list_col_X: list[str] | None = None
-    col_y: str | None = None
-
-    def __post_init__(self):
-        if self.list_col_X is None:
-            self.list_col_X = [
-                "recent_position",
-                "season_position",
-                "season_q_relative_performance",
-                "prev_position",
-            ]
-        if self.col_y is None:
-            self.col_y = "position"
+PREV_NUM = 5
+PREV_NUM_SEASON = 3
 
 
 def make_datamart(bucket_name: str) -> pd.DataFrame:
@@ -95,44 +78,38 @@ def add_future_race_row(
 
 def add_features(df: pd.DataFrame) -> pd.DataFrame:
     """Add features to datamart for model training and inference"""
-
     # Make relative performance about qualifying
     df["q1_sec_fastest"] = df.groupby(["season", "round"])["q1_sec"].transform("min")
     df["q2_sec_fastest"] = df.groupby(["season", "round"])["q2_sec"].transform("min")
     df["q3_sec_fastest"] = df.groupby(["season", "round"])["q3_sec"].transform("min")
-    df["q1_sec_relative_performance"] = (df["q1_sec"] - df["q1_sec_fastest"]) / df[
-        "q1_sec_fastest"
-    ]
-    df["q2_sec_relative_performance"] = (df["q2_sec"] - df["q2_sec_fastest"]) / df[
-        "q2_sec_fastest"
-    ]
-    df["q3_sec_relative_performance"] = (df["q3_sec"] - df["q3_sec_fastest"]) / df[
-        "q3_sec_fastest"
-    ]
-    df["q_relative_performance"] = (
-        df[
-            [
-                "q1_sec_relative_performance",
-                "q2_sec_relative_performance",
-                "q3_sec_relative_performance",
-            ]
-        ].mean(axis=1, skipna=True)
+    df["q1_sec_relative_performance"] = (
+        (df["q1_sec"] - df["q1_sec_fastest"]) / df["q1_sec_fastest"]
+    ) * 100
+    df["q2_sec_relative_performance"] = (
+        (df["q2_sec"] - df["q2_sec_fastest"]) / df["q2_sec_fastest"]
+    ) * 100
+    df["q3_sec_relative_performance"] = (
+        (df["q3_sec"] - df["q3_sec_fastest"]) / df["q3_sec_fastest"]
     ) * 100
 
-    # Make prev position data
-    df.sort_values(by=["driver", "grandprix", "season"], inplace=True)
-    df["prev_position"] = df.groupby(["driver", "grandprix"])["position"].shift(1)
+    # Make previous position data
+    for prev_num in range(1, PREV_NUM + 1):
+        df[f"position_prev{prev_num}"] = df.groupby(["season", "driver"])[
+            "position"
+        ].shift(prev_num)
 
-    # Make rolling data
-    df.sort_values(by=["driver", "season", "round"], inplace=True)
-    df["recent_position"] = df.groupby(["driver", "season"])["position"].transform(
-        lambda x: x.shift(1).rolling(window=3, min_periods=1).mean()
-    )
-    df["season_position"] = df.groupby(["driver", "season"])["position"].transform(
-        lambda x: x.shift(1).expanding(min_periods=1).mean()
-    )
-    df["season_q_relative_performance"] = df.groupby(["driver", "season"])[
-        "q_relative_performance"
-    ].transform(lambda x: x.shift(1).expanding(min_periods=1).mean())
+    # Make previous qualifying data
+    for q in range(1, 4):
+        for prev_num in range(1, PREV_NUM + 1):
+            df[f"q{q}_performance_prev{prev_num}"] = df.groupby(["season", "driver"])[
+                f"q{q}_sec_relative_performance"
+            ].shift(prev_num)
+
+    # Make previous season position data
+    df.sort_values(by=["driver", "grandprix", "season"], inplace=True)
+    for prev_num in range(1, PREV_NUM_SEASON + 1):
+        df[f"position_prev_season{prev_num}"] = df.groupby(["driver", "grandprix"])[
+            "position"
+        ].shift(prev_num)
 
     return df
