@@ -8,6 +8,57 @@ from modules.inmemory_db import InmemoryDB
 
 
 @st.cache_resource(ttl=60 * 10)
+def create_practice_time_plot(
+    _db: InmemoryDB, grandprix: str, practice_num: int
+) -> Figure:
+    """Create Practice Time Plot"""
+
+    query = f"""
+    SELECT
+        season, 
+        time_sec,
+        1 AS practice
+    FROM 
+        practice{practice_num}
+    WHERE 
+        grandprix = '{grandprix}' 
+    AND 
+        practice{practice_num}.position = 1    
+    """
+    df = _db.execute_query(query)
+
+    fig, ax = plt.subplots()
+    sns.lineplot(
+        data=df,
+        x="season",
+        y="time_sec",
+        marker="o",
+        ax=ax,
+        linestyle="-",
+        color="skyblue",
+    )
+
+    ax.set_xlabel("Year", fontsize=14)
+    ax.set_ylabel("Seconds", fontsize=14)
+    ax.set_xticks(df["season"])
+    ax.set_xticklabels(df["season"], rotation=45)
+
+    # Annotate each point with the time value
+    for i, row in df.iterrows():
+        ax.annotate(
+            f"{row['time_sec']:.2f}",
+            (row["season"], row["time_sec"]),
+            textcoords="offset points",
+            xytext=(0, 10),
+            ha="center",
+        )
+
+    plt.tight_layout()
+
+    return fig
+
+
+@st.cache_resource(ttl=60 * 10)
 def create_practice_race_relation_plot(
     _db: InmemoryDB, grandprix: str
 ) -> tuple[Figure, Figure, Figure]:
