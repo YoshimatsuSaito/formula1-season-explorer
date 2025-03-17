@@ -16,8 +16,8 @@ def get_round_grandprix_from_sidebar(df_calendar: pd.DataFrame) -> tuple[int, st
             df_calendar["round"].tolist(), df_calendar["grandprix"].tolist()
         )
     }
-    round_to_show = st.sidebar.selectbox(
-        "Choose Grand Prix",
+    round_to_show = st.sidebar.radio(
+        label="Choose Grand Prix",
         options=list(dict_options.keys()),
         format_func=lambda x: dict_options[x],
         index=int(ser_default["round"]) - 1,

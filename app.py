@@ -177,8 +177,14 @@ st.markdown(
     f"This page provides various information about the {grandprix_to_show} Grand Prix, as well as current standings and statistics for the {SEASON} season."
 )
 
-page = st.radio(
-    "Select the type of information to display",
+(
+    tab_grandprix,
+    tab_driver,
+    tab_prediction,
+    tab_standings,
+    tab_customsearch,
+    tab_miscellaneous,
+) = st.tabs(
     [
         "Grand Prix",
         "Drivers",
@@ -187,13 +193,11 @@ page = st.radio(
         "Custom Search",
         "Miscellaneous",
     ],
-    index=0,
-    horizontal=True,
 )
 
 st.markdown("---")
 
-if page == "Grand Prix":
+with tab_grandprix:
     # Show stats
     st.subheader("Grand Prix Statistics")
 
@@ -344,7 +348,7 @@ if page == "Grand Prix":
         )
         st.pyplot(fig_diff_fastest_pole)
 
-if page == "Drivers":
+with tab_driver:
     st.subheader("Driver Statistics")
     driver_abbreviation = st.radio(
         "Select a Driver",
@@ -375,7 +379,7 @@ if page == "Drivers":
     )
     st.pyplot(fig_point_standings)
 
-if page == "Prediction":
+with tab_prediction:
     df_features = _cached_make_features(df_calendar=df_calendar)
     classifier = _cached_classifier()
     ranker = _cached_ranker()
@@ -395,7 +399,7 @@ if page == "Prediction":
     )
     create_position_prediction_plot(df_prediction, _db=db)
 
-if page == "Standings":
+with tab_standings:
     st.markdown(f"### Points Standings for the {SEASON} Season")
 
     projection_num = st.radio(
@@ -413,7 +417,7 @@ if page == "Standings":
     )
     st.pyplot(fig_standings)
 
-if page == "Custom Search":
+with tab_customsearch:
     st.markdown("### Custom Statistics Search")
     ## Users' search
     show_user_search_result(
@@ -422,7 +426,7 @@ if page == "Custom Search":
         grandprix=grandprix_to_show,
     )
 
-if page == "Miscellaneous":
+with tab_miscellaneous:
     st.markdown("### Miscellaneous")
     # Show calendar
     st.link_button(
