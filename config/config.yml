@@ -1,4 +1,4 @@
-season: 2024
+season: 2025
 s3_geo_data_key: "geo_data/circuits"
 s3_model_key : "model"
 s3_grandprix_result_data_key:

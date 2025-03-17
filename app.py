@@ -425,4 +425,6 @@ if page == "Custom Search":
 if page == "Miscellaneous":
     st.markdown("### Miscellaneous")
     # Show calendar
-    st.link_button("Season Full Schedule", "https://www.formula1.com/en/racing/2024")
+    st.link_button(
+        "Season Full Schedule", f"https://www.formula1.com/en/racing/{SEASON}"
+    )
