@@ -11,11 +11,15 @@ def get_round_grandprix_from_sidebar(df_calendar: pd.DataFrame) -> tuple[int, st
     """Identify the target round to show"""
     ser_default = get_latest_grandprix(df_calendar=df_calendar)
     dict_options = {
-        round_num: f"Rd. {round_num}: {grandprix}"
-        for round_num, grandprix in zip(
-            df_calendar["round"].tolist(), df_calendar["grandprix"].tolist()
+        round_num: f"Rd. {round_num}: {grandprix} ({month}/{date})"
+        for round_num, grandprix, month, date in zip(
+            df_calendar["round"].tolist(),
+            df_calendar["grandprix"].tolist(),
+            df_calendar["month"].tolist(),
+            df_calendar["date"],
         )
     }
+    st.sidebar.subheader(df_calendar["season"].unique()[0])
     round_to_show = st.sidebar.radio(
         label="Choose Grand Prix",
         options=list(dict_options.keys()),
